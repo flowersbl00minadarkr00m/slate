@@ -7,21 +7,58 @@ import { useState, useMemo, useCallback } from "react";
    ============================================================ */
 
 const C = {
-  paper: "#FAFAF7",
-  ink: "#1C2826",
-  inkSoft: "#4A5853",
-  pine: "#2E5E52",
-  pineDeep: "#1F4239",
-  honey: "#D9A441",
-  honeyDeep: "#B5832B",
-  mist: "#E4E7E2",
-  card: "#FFFFFF",
-  danger: "#A4452F",
+  paper: "#F4F2EC",
+  ink: "#111111",
+  inkSoft: "#5D5B55",
+  pine: "#111111",
+  pineDeep: "#050505",
+  honey: "#D9FF3F",
+  honeyDeep: "#7D8F1A",
+  mist: "#D7D2C7",
+  card: "#FBFAF5",
+  danger: "#B23A2E",
 };
 
 const DISPLAY = "'Fraunces', Georgia, serif";
 const BODY = "'Inter', system-ui, sans-serif";
 const MONO = "'JetBrains Mono', ui-monospace, monospace";
+const DEMO_MODE =
+  import.meta.env.VITE_PUBLIC_DEMO === "true" ||
+  new URLSearchParams(window.location.search).get("demo") === "1";
+
+function Btn({ children, onClick, kind = "solid", small, disabled }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={`font-semibold uppercase tracking-wider transition-opacity ${small ? "px-4 py-2 text-[10px]" : "px-6 py-3 text-xs"} ${disabled ? "opacity-40 cursor-not-allowed" : "hover:opacity-85"}`}
+      style={
+        kind === "solid"
+          ? { background: C.pine, color: "#fff", fontFamily: BODY }
+          : kind === "ghost"
+            ? { background: "transparent", color: C.ink, border: `1px solid ${C.ink}`, fontFamily: BODY }
+            : { background: C.honey, color: C.ink, fontFamily: BODY }
+      }
+    >
+      {children}
+    </button>
+  );
+}
+
+function Field({ label, children }) {
+  return (
+    <label className="block">
+      <span
+        className="block mb-2 text-[10px] font-bold uppercase tracking-[0.22em]"
+        style={{ color: C.ink, fontFamily: MONO }}
+      >
+        {label}
+      </span>
+      {children}
+    </label>
+  );
+}
 
 /* ---------- helpers ---------- */
 
@@ -43,6 +80,13 @@ function fmtDur(sec) {
 
 function fmtMins(sec) {
   return `${Math.round(sec / 60)} min`;
+}
+
+function fmtCount(n) {
+  const value = Number(n || 0);
+  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(value >= 10_000_000 ? 0 : 1)}M`;
+  if (value >= 1_000) return `${(value / 1_000).toFixed(value >= 10_000 ? 0 : 1)}K`;
+  return String(value);
 }
 
 function todayAt(hhmm) {
@@ -70,21 +114,81 @@ function nextUnlock(refreshTimes, lastRefresh) {
 const seedGoals = [
   {
     id: uid(),
-    name: "AI governance & assurance",
+    name: "History and edge cases of AI governance",
     description:
-      "Enterprise AI governance, AI risk and controls, ISO 42001, SOC 2 for AI systems, agent oversight, policy engines. Practitioner depth over hype.",
-    keywords: "AI governance ISO 42001, AI agent risk controls",
+      "The history and evolution of AI governance, difficult edge cases, contested definitions, assurance limits, accountability gaps and practical failures. Historical and practitioner depth over hype.",
+    keywords: "history of AI governance, AI governance edge cases",
     endDate: "2026-09-30",
     weeklyMinutes: 120,
   },
   {
     id: uid(),
-    name: "Basketball film & analysis",
+    name: "Postmodern philosophy",
     description:
-      "NBA and FIBA tactical breakdowns, roster construction, draft analysis. Film study and strategy, not trade rumors or drama.",
-    keywords: "NBA film breakdown, FIBA tactical analysis",
+      "Postmodern philosophy, its major thinkers, intellectual history, strongest arguments, serious critiques and applications to knowledge, language, institutions and power. Primary ideas over culture-war summaries.",
+    keywords: "postmodern philosophy lecture, postmodernism intellectual history",
     endDate: "2026-09-30",
     weeklyMinutes: 60,
+  },
+  {
+    id: uid(),
+    name: "System dynamics",
+    description:
+      "System dynamics, feedback loops, stocks and flows, delays, leverage points, causal loop diagrams and applications to organizations and public policy. Rigorous explanation with practical examples.",
+    keywords: "system dynamics feedback loops, system dynamics lecture",
+    endDate: "2026-09-30",
+    weeklyMinutes: 90,
+  },
+];
+
+const seedDemoVideos = [
+  {
+    id: "demo-ai-controls",
+    title: "From AI principles to controls that can be tested",
+    channel: "Demo catalogue",
+    description: "A practical walkthrough of AI governance controls and assurance evidence.",
+    duration: 1422,
+    goalId: seedGoals[0].id,
+    score: 94,
+    why: "practical governance and assurance depth",
+    status: "fresh",
+    demoLabel: "AI GOVERNANCE",
+  },
+  {
+    id: "demo-agent-oversight",
+    title: "Designing oversight for autonomous AI agents",
+    channel: "Demo catalogue",
+    description: "Human oversight, escalation paths, and evidence for agentic systems.",
+    duration: 1098,
+    goalId: seedGoals[0].id,
+    score: 89,
+    why: "directly addresses agent oversight",
+    status: "fresh",
+    demoLabel: "AI ASSURANCE",
+  },
+  {
+    id: "demo-postmodernism",
+    title: "Postmodernism: the strongest case before the critique",
+    channel: "Demo catalogue",
+    description: "An intellectual history of postmodern thought and its strongest arguments.",
+    duration: 1260,
+    goalId: seedGoals[1].id,
+    score: 91,
+    why: "serious historical and philosophical treatment",
+    status: "fresh",
+    demoLabel: "POSTMODERN PHILOSOPHY",
+  },
+  {
+    id: "demo-system-dynamics",
+    title: "Feedback loops, delays and unintended consequences",
+    channel: "Demo catalogue",
+    description: "A practical introduction to system dynamics using causal loop diagrams.",
+    duration: 876,
+    goalId: seedGoals[2].id,
+    score: 86,
+    why: "clear system dynamics foundations",
+    status: "fresh",
+    demoLabel: "SYSTEM DYNAMICS",
   },
 ];
 
@@ -93,7 +197,7 @@ const defaultSettings = {
   blockShorts: true,
   feedCap: 12,
   refreshTimes: ["07:00", "17:00"],
-  lookbackDays: 14,
+  lookbackDays: 90,
 };
 
 /* ---------- YouTube API ---------- */
@@ -170,7 +274,7 @@ async function videoDetails(ids, apiKey) {
 }
 
 /* ---------- relevance scoring (via serverless proxy) ----------
-   The Claude call happens server-side in /api/score so the API
+   The OpenAI call happens server-side in /api/score so the API
    key never reaches the browser. The client only sends the bits
    of metadata the scorer needs.
 ------------------------------------------------------------------ */
@@ -235,19 +339,19 @@ function buildSlate(scored, goals, settings) {
    ============================================================ */
 
 export default function App() {
-  const [view, setView] = useState("settings");
-  const [apiKey, setApiKey] = useState("");
+  const [view, setView] = useState(DEMO_MODE ? "feed" : "settings");
   const [goals, setGoals] = useState(seedGoals);
   const [channels, setChannels] = useState([]);
   const [channelInput, setChannelInput] = useState("");
   const [settings, setSettings] = useState(defaultSettings);
-  const [videos, setVideos] = useState([]);
+  const [videos, setVideos] = useState(DEMO_MODE ? seedDemoVideos : []);
   const [lastRefresh, setLastRefresh] = useState(null);
   const [loading, setLoading] = useState(false);
   const [loadStep, setLoadStep] = useState("");
   const [error, setError] = useState("");
   const [playing, setPlaying] = useState(null);
   const [quotaUsed, setQuotaUsed] = useState(0);
+  const [cacheStats, setCacheStats] = useState(null);
 
   const activeGoals = useMemo(
     () => goals.filter((g) => !g.endDate || new Date(g.endDate) >= new Date()),
@@ -259,60 +363,20 @@ export default function App() {
   const refresh = useCallback(
     async (force = false) => {
       setError("");
-      if (!apiKey) {
-        setError("Add your YouTube Data API key in settings first.");
-        setView("settings");
-        return;
-      }
       if (!force && !gate.allowed) return;
       setLoading(true);
-      let quota = 0;
       try {
-        // 1. Goal-driven searches (primary source)
-        setLoadStep("Searching for goal-aligned videos…");
-        const ids = new Set();
-        for (const g of activeGoals) {
-          const queries = g.keywords
-            .split(",")
-            .map((q) => q.trim())
-            .filter(Boolean)
-            .slice(0, 2);
-          for (const q of queries) {
-            const found = await searchVideos(q, apiKey, settings.lookbackDays);
-            quota += 100;
-            found.forEach((id) => ids.add(id));
-          }
-        }
-        // 2. Channel uploads (secondary source; origin is NOT a ranking factor)
-        if (channels.length) {
-          setLoadStep("Pulling channel uploads…");
-          for (const ch of channels) {
-            try {
-              const found = await channelUploads(ch, apiKey);
-              quota += 2;
-              found.forEach((id) => ids.add(id));
-            } catch {
-              /* skip bad channel */
-            }
-          }
-        }
-        // 3. Details + length / Shorts filter
-        setLoadStep("Filtering by length…");
-        const details = await videoDetails([...ids], apiKey);
-        quota += Math.ceil(ids.size / 50);
-        const minSec = settings.minLengthMin * 60;
-        const filtered = details.filter((v) => {
-          if (settings.blockShorts && v.duration < 180) return false;
-          return v.duration >= minSec;
+        setLoadStep("Programming today's slate from server-side sources...");
+        const res = await fetch("/api/build-slate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ goals: activeGoals, channels, settings, force }),
         });
-        // 4. Relevance scoring
-        setLoadStep(`Scoring ${filtered.length} videos against your goals…`);
-        const scored = await scoreAll(filtered, activeGoals);
-        // 5. Build the finite slate
-        setLoadStep("Programming today's slate…");
-        const slate = buildSlate(scored, activeGoals, settings);
-        setVideos(slate);
-        setQuotaUsed(quota);
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || `Slate build failed (${res.status})`);
+        setVideos(data.videos || []);
+        setQuotaUsed(data.quotaUsed || 0);
+        setCacheStats(data.cacheStats || null);
         setLastRefresh(new Date());
         setView("feed");
       } catch (e) {
@@ -322,7 +386,7 @@ export default function App() {
         setLoadStep("");
       }
     },
-    [apiKey, activeGoals, channels, settings, gate.allowed]
+    [activeGoals, channels, settings, gate.allowed]
   );
 
   const mark = (id, status) => {
@@ -337,46 +401,15 @@ export default function App() {
     .filter((v) => v.status === "watched")
     .reduce((s, v) => s + v.duration, 0);
 
-  /* ---------- shared bits ---------- */
-
-  const Btn = ({ children, onClick, kind = "solid", small, disabled }) => (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      className={`rounded-md font-medium transition-opacity ${small ? "px-3 py-1.5 text-xs" : "px-5 py-2.5 text-sm"} ${disabled ? "opacity-40 cursor-not-allowed" : "hover:opacity-85"}`}
-      style={
-        kind === "solid"
-          ? { background: C.pine, color: "#fff", fontFamily: BODY }
-          : kind === "ghost"
-          ? { background: "transparent", color: C.inkSoft, border: `1px solid ${C.mist}`, fontFamily: BODY }
-          : { background: C.honey, color: C.ink, fontFamily: BODY }
-      }
-    >
-      {children}
-    </button>
-  );
-
-  const Field = ({ label, children }) => (
-    <label className="block">
-      <span
-        className="block mb-1 text-xs font-semibold uppercase tracking-wider"
-        style={{ color: C.inkSoft, fontFamily: BODY, letterSpacing: "0.08em" }}
-      >
-        {label}
-      </span>
-      {children}
-    </label>
-  );
-
   const inputStyle = {
     width: "100%",
-    padding: "10px 12px",
-    borderRadius: 8,
-    border: `1px solid ${C.mist}`,
-    background: C.card,
+    padding: "14px 14px",
+    borderRadius: 0,
+    border: `1px solid ${C.ink}`,
+    background: "#FFFDF7",
     color: C.ink,
     fontFamily: BODY,
-    fontSize: 14,
+    fontSize: 15,
     outline: "none",
   };
 
@@ -384,34 +417,60 @@ export default function App() {
 
   const Masthead = () => (
     <header
-      className="flex items-end justify-between pb-5 mb-8"
-      style={{ borderBottom: `3px solid ${C.ink}` }}
+      className="pb-8 mb-12"
+      style={{ borderBottom: `1px solid ${C.ink}` }}
     >
-      <div>
-        <h1
-          className="leading-none"
-          style={{ fontFamily: DISPLAY, fontWeight: 700, fontSize: 44, color: C.ink }}
-        >
-          Slate
-        </h1>
-        <p className="mt-1 text-sm" style={{ color: C.inkSoft, fontFamily: BODY }}>
-          A feed that ends.{" "}
-          <span style={{ fontFamily: MONO, fontSize: 12 }}>
+      <div className="flex items-start justify-between gap-8">
+        <div>
+          <p
+            className="mb-4 text-[10px] font-bold uppercase tracking-[0.35em]"
+            style={{ color: C.inkSoft, fontFamily: MONO }}
+          >
+            Programmed media / finite feed
+          </p>
+          <h1
+            className="leading-[0.82] uppercase"
+            style={{
+              fontFamily: DISPLAY,
+              fontWeight: 900,
+              fontSize: "clamp(76px, 14vw, 180px)",
+              letterSpacing: "-0.08em",
+              color: C.ink,
+            }}
+          >
+            Slate
+          </h1>
+          {DEMO_MODE && (
+            <span
+              className="inline-block mt-4 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em]"
+              style={{ background: C.honey, color: C.ink, fontFamily: MONO }}
+            >
+              DEMO EDITION
+            </span>
+          )}
+        </div>
+        <div className="max-w-sm pt-2 text-right">
+          <p className="text-2xl leading-tight" style={{ color: C.ink, fontFamily: DISPLAY }}>
+            A feed that ends.
+          </p>
+          <p className="mt-3 text-xs uppercase tracking-[0.18em]" style={{ color: C.inkSoft, fontFamily: MONO }}>
             {new Date().toLocaleDateString("en-CA", {
               weekday: "long",
               month: "long",
               day: "numeric",
             })}
-          </span>
-        </p>
+          </p>
+        </div>
       </div>
-      <nav className="flex gap-2">
+      <nav className="mt-8 flex gap-2 justify-end">
         <Btn kind={view === "feed" ? "solid" : "ghost"} small onClick={() => setView("feed")}>
           Today's slate
         </Btn>
-        <Btn kind={view === "settings" ? "solid" : "ghost"} small onClick={() => setView("settings")}>
-          Programming
-        </Btn>
+        {!DEMO_MODE && (
+          <Btn kind={view === "settings" ? "solid" : "ghost"} small onClick={() => setView("settings")}>
+            Programming
+          </Btn>
+        )}
       </nav>
     </header>
   );
@@ -419,40 +478,34 @@ export default function App() {
   /* ---------- settings view ---------- */
 
   const SettingsView = () => (
-    <div className="space-y-10">
+    <div className="space-y-14">
       <section>
-        <h2 style={{ fontFamily: DISPLAY, fontSize: 24, fontWeight: 600, color: C.ink }}>
-          Connection
-        </h2>
-        <div className="mt-4 max-w-xl">
-          <Field label="YouTube Data API key">
-            <input
-              style={inputStyle}
-              type="password"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              placeholder="AIza…"
-            />
-          </Field>
-          <p className="mt-2 text-xs" style={{ color: C.inkSoft, fontFamily: BODY }}>
-            Free from Google Cloud Console → enable "YouTube Data API v3" → create an API key. Stays
-            in this session only. The Claude scoring key lives on the server, not here.
+        <div className="grid gap-6 md:grid-cols-[0.65fr_1fr] items-end">
+          <h2
+            className="uppercase leading-none"
+            style={{ fontFamily: DISPLAY, fontSize: "clamp(44px, 8vw, 96px)", fontWeight: 900, letterSpacing: "-0.06em", color: C.ink }}
+          >
+            Goals
+          </h2>
+          <p className="max-w-xl text-lg leading-snug" style={{ color: C.inkSoft, fontFamily: BODY }}>
+            Each goal gets a weekly time budget. The slate is programmed to fill it — and stop.
           </p>
         </div>
-      </section>
-
-      <section>
-        <h2 style={{ fontFamily: DISPLAY, fontSize: 24, fontWeight: 600, color: C.ink }}>Goals</h2>
-        <p className="mt-1 text-sm" style={{ color: C.inkSoft, fontFamily: BODY }}>
-          Each goal gets a weekly time budget. The slate is programmed to fill it — and stop.
-        </p>
-        <div className="mt-4 space-y-4">
+        <div className="mt-8 space-y-6">
           {goals.map((g) => (
             <div
               key={g.id}
-              className="rounded-lg p-5"
-              style={{ background: C.card, border: `1px solid ${C.mist}` }}
+              className="p-6 md:p-8"
+              style={{ background: C.card, border: `1px solid ${C.ink}`, boxShadow: `10px 10px 0 ${C.ink}` }}
             >
+              <div className="mb-6 flex items-center justify-between border-b pb-3" style={{ borderColor: C.ink }}>
+                <span className="text-[10px] font-bold uppercase tracking-[0.28em]" style={{ fontFamily: MONO }}>
+                  Program block
+                </span>
+                <span className="text-[10px] font-bold uppercase tracking-[0.28em]" style={{ fontFamily: MONO, color: C.inkSoft }}>
+                  {g.weeklyMinutes} min / week
+                </span>
+              </div>
               <div className="grid gap-4" style={{ gridTemplateColumns: "1fr 1fr" }}>
                 <Field label="Goal name">
                   <input
@@ -519,6 +572,7 @@ export default function App() {
               </div>
               <div className="mt-3 text-right">
                 <button
+                  type="button"
                   onClick={() => setGoals((gs) => gs.filter((x) => x.id !== g.id))}
                   className="text-xs hover:opacity-70"
                   style={{ color: C.danger, fontFamily: BODY }}
@@ -560,7 +614,7 @@ export default function App() {
             style={inputStyle}
             value={channelInput}
             onChange={(e) => setChannelInput(e.target.value)}
-            placeholder="@handle or channel ID (UC…)"
+            placeholder="@handle or channel ID (UC...)"
             onKeyDown={(e) => {
               if (e.key === "Enter" && channelInput.trim()) {
                 setChannels((cs) => [...cs, channelInput.trim()]);
@@ -589,11 +643,12 @@ export default function App() {
             >
               {ch}
               <button
+                type="button"
                 onClick={() => setChannels((cs) => cs.filter((_, j) => j !== i))}
                 style={{ color: C.inkSoft }}
                 className="hover:opacity-70"
               >
-                ✕
+                ×
               </button>
             </span>
           ))}
@@ -642,6 +697,16 @@ export default function App() {
               }
             />
           </Field>
+          <Field label="Lookback (days)">
+            <input
+              style={inputStyle}
+              type="number"
+              min="7"
+              max="365"
+              value={settings.lookbackDays}
+              onChange={(e) => setSettings((s) => ({ ...s, lookbackDays: +e.target.value }))}
+            />
+          </Field>
         </div>
         <label
           className="mt-4 flex items-center gap-3 text-sm"
@@ -670,8 +735,8 @@ export default function App() {
             channel{channels.length !== 1 ? "s" : ""} · editions at {settings.refreshTimes.join(" and ")}
           </p>
         </div>
-        <Btn kind="accent" onClick={() => refresh(true)} disabled={loading || !apiKey}>
-          {loading ? "Programming…" : "Build first slate"}
+        <Btn kind="accent" onClick={() => refresh(true)} disabled={loading}>
+          {loading ? "Programming..." : "Build first slate"}
         </Btn>
       </section>
     </div>
@@ -715,14 +780,14 @@ export default function App() {
 
   const VideoCard = ({ v }) => (
     <article
-      className="rounded-lg overflow-hidden"
+      className="overflow-hidden"
       style={{
         background: C.card,
-        border: `1px solid ${C.mist}`,
+        border: `1px solid ${C.ink}`,
         opacity: v.status === "fresh" ? 1 : 0.45,
       }}
     >
-      {playing === v.id ? (
+      {playing === v.id && !DEMO_MODE ? (
         <div className="relative" style={{ paddingBottom: "56.25%" }}>
           <iframe
             className="absolute inset-0 w-full h-full"
@@ -732,21 +797,45 @@ export default function App() {
             allowFullScreen
           />
         </div>
-      ) : (
-        <button className="block w-full relative group" onClick={() => setPlaying(v.id)}>
-          <img src={v.thumb} alt="" className="w-full block" />
+      ) : v.thumb ? (
+        <button type="button" className="block w-full relative group" onClick={() => setPlaying(v.id)}>
+          <img src={v.thumb} alt="" className="w-full block grayscale group-hover:grayscale-0 transition-all" />
           <span
-            className="absolute bottom-2 right-2 px-1.5 py-0.5 rounded text-xs"
-            style={{ background: "rgba(28,40,38,0.9)", color: "#fff", fontFamily: MONO }}
+            className="absolute bottom-2 right-2 px-2 py-1 text-[10px] font-bold"
+            style={{ background: C.honey, color: C.ink, fontFamily: MONO }}
           >
             {fmtDur(v.duration)}
           </span>
         </button>
+      ) : (
+        <div
+          className="w-full flex items-end p-4"
+          style={{
+            aspectRatio: "16 / 9",
+            background: `linear-gradient(135deg, ${C.pineDeep}, ${C.pine})`,
+            color: "#fff",
+          }}
+        >
+          <div className="w-full flex items-end justify-between gap-3">
+            <span style={{ fontFamily: MONO, fontSize: 11, letterSpacing: "0.12em" }}>
+              {v.demoLabel || "SLATE DEMO"}
+            </span>
+            <span
+              className="px-1.5 py-0.5 rounded text-xs"
+              style={{ background: "rgba(28,40,38,0.9)", fontFamily: MONO }}
+            >
+              {fmtDur(v.duration)}
+            </span>
+          </div>
+        </div>
       )}
-      <div className="p-4">
+      <div className="p-5">
+        <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.24em]" style={{ color: C.inkSoft, fontFamily: MONO }}>
+          {v.cache === "score" ? "Cached signal" : "Fresh signal"}
+        </p>
         <h4
-          className="leading-snug"
-          style={{ fontFamily: BODY, fontWeight: 600, fontSize: 15, color: C.ink }}
+          className="leading-[1.02]"
+          style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: 28, color: C.ink, letterSpacing: "-0.04em" }}
         >
           {v.title}
         </h4>
@@ -755,8 +844,10 @@ export default function App() {
         </p>
         <p className="mt-2 text-xs italic" style={{ color: C.pineDeep, fontFamily: BODY }}>
           {v.score}/100 — {v.why}
+          {v.viewCount ? ` · ${fmtCount(v.viewCount)} views` : ""}
+          {v.cache === "score" ? " · cached" : ""}
         </p>
-        {v.status === "fresh" && (
+        {v.status === "fresh" && !DEMO_MODE && (
           <div className="mt-3 flex gap-2">
             <Btn small onClick={() => (playing === v.id ? mark(v.id, "watched") : setPlaying(v.id))}>
               {playing === v.id ? "Mark watched" : "Watch"}
@@ -806,6 +897,11 @@ export default function App() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
+          {DEMO_MODE && (
+            <p className="mb-1" style={{ fontFamily: MONO, fontSize: 10, color: C.honeyDeep }}>
+              SEEDED DEMO · NO ACCOUNTS, CREDENTIALS OR API CALLS
+            </p>
+          )}
           {videos.length > 0 ? (
             <p style={{ fontFamily: BODY, fontSize: 14, color: C.inkSoft }}>
               Today's slate:{" "}
@@ -821,14 +917,18 @@ export default function App() {
           {quotaUsed > 0 && (
             <p style={{ fontFamily: MONO, fontSize: 10, color: C.inkSoft }} className="mt-0.5">
               ~{quotaUsed} / 10,000 daily API units used
+              {cacheStats?.supabaseAvailable &&
+                ` · cache ${cacheStats.videoHits || 0} video hits / ${cacheStats.scoreHits || 0} score hits`}
             </p>
           )}
         </div>
         <div className="text-right">
-          <Btn onClick={() => refresh()} disabled={loading || !gate.allowed}>
-            {loading ? "Programming…" : "New edition"}
-          </Btn>
-          {!gate.allowed && (
+          {!DEMO_MODE && (
+            <Btn onClick={() => refresh()} disabled={loading || !gate.allowed}>
+              {loading ? "Programming..." : "New edition"}
+            </Btn>
+          )}
+          {!DEMO_MODE && !gate.allowed && (
             <p className="mt-1" style={{ fontFamily: MONO, fontSize: 10, color: C.honeyDeep }}>
               unlocks {gate.next?.toLocaleTimeString("en-CA", { hour: "2-digit", minute: "2-digit" })}
             </p>
@@ -843,7 +943,7 @@ export default function App() {
         >
           <p style={{ fontFamily: DISPLAY, fontSize: 18, color: C.ink }}>{loadStep}</p>
           <p className="mt-2 text-xs" style={{ color: C.inkSoft, fontFamily: BODY }}>
-            Searching, filtering, and scoring takes ~30–60 seconds.
+            The first run may take a bit; cached runs should get faster.
           </p>
         </div>
       )}
@@ -901,15 +1001,15 @@ export default function App() {
 
   return (
     <div style={{ background: C.paper, minHeight: "100vh", color: C.ink }}>
-      <div className="mx-auto px-6 py-8" style={{ maxWidth: 1100 }}>
-        <Masthead />
-        {view === "settings" ? <SettingsView /> : <FeedView />}
+      <div className="mx-auto px-6 py-8 md:px-10 md:py-10" style={{ maxWidth: 1320 }}>
+        {Masthead()}
+        {view === "settings" ? SettingsView() : FeedView()}
         <footer
           className="mt-16 pt-4 text-xs flex justify-between"
           style={{ borderTop: `1px solid ${C.mist}`, color: C.inkSoft, fontFamily: MONO }}
         >
           <span>Slate — the feed that ends</span>
-          <span>prototype · settings reset on reload</span>
+          <span>{DEMO_MODE ? "seeded demo · no external requests" : "prototype · settings reset on reload"}</span>
         </footer>
       </div>
     </div>

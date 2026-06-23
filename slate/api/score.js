@@ -1,11 +1,33 @@
 /*
-  /api/score  — server-side relevance scoring
+  /api/score — server-side relevance scoring
   Receives { videos, goals }, builds the scoring prompt, calls the
-  Anthropic API with a key that lives only on the server, and returns
-  a parsed array: [{ i, g, s, w }].
+  OpenAI Responses API with a key that lives only on the server, and
+  returns [{ i, g, s, w }].
 */
 
-const DEFAULT_MODEL = "claude-haiku-4-5-20251001";
+const DEFAULT_MODEL = "gpt-5.5";
+
+const scoreSchema = {
+  type: "object",
+  properties: {
+    scores: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          i: { type: "integer", minimum: 0 },
+          g: { type: "string" },
+          s: { type: "integer", minimum: 0, maximum: 100 },
+          w: { type: "string" },
+        },
+        required: ["i", "g", "s", "w"],
+        additionalProperties: false,
+      },
+    },
+  },
+  required: ["scores"],
+  additionalProperties: false,
+};
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -13,13 +35,12 @@ export default async function handler(req, res) {
     return;
   }
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
-    res.status(500).json({ error: "ANTHROPIC_API_KEY is not set on the server." });
+    res.status(500).json({ error: "OPENAI_API_KEY is not set on the server." });
     return;
   }
 
-  // Vercel parses JSON bodies automatically, but guard for safety.
   let body = req.body;
   if (typeof body === "string") {
     try {
@@ -42,50 +63,56 @@ export default async function handler(req, res) {
     .map((v, i) => `${i}. "${v.title}" | ${v.channel} | ${(v.description || "").slice(0, 140)}`)
     .join("\n");
 
-  const prompt = `You score YouTube videos against a person's stated goals. Goals:
+  const prompt = `Score every YouTube video against the stated learning goals.
+
+Goals:
 ${goalList}
 
 Videos:
 ${vidList}
 
-For each video, pick the single best-matching goal and a relevance score 0-100 (0 = unrelated, 100 = exactly what this goal is for). Penalize clickbait, drama, and surface-level hype; reward depth and practitioner value. Respond ONLY with a JSON array, no markdown fences, no prose: [{"i":0,"g":"<goal id>","s":85,"w":"<reason, max 8 words>"}]`;
+For each video, choose the single best-matching goal and assign a relevance score from 0 to 100. Penalize clickbait, drama, weak historical grounding, and surface-level summaries. Reward depth, credible context, edge cases, competing interpretations, and practitioner value. Keep each reason to eight words or fewer.`;
 
   try {
-    const r = await fetch("https://api.anthropic.com/v1/messages", {
+    const r = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
       headers: {
         "content-type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
+        authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
         model: process.env.SLATE_MODEL || DEFAULT_MODEL,
-        max_tokens: 1000,
-        messages: [{ role: "user", content: prompt }],
+        reasoning: { effort: "none" },
+        input: prompt,
+        max_output_tokens: 2000,
+        text: {
+          verbosity: "low",
+          format: {
+            type: "json_schema",
+            name: "video_scores",
+            strict: true,
+            schema: scoreSchema,
+          },
+        },
       }),
     });
 
     const data = await r.json();
     if (!r.ok) {
-      res.status(r.status).json({ error: data?.error?.message || "Anthropic API error." });
+      res.status(r.status).json({ error: data?.error?.message || "OpenAI API error." });
       return;
     }
 
-    const text = (data.content || [])
-      .filter((b) => b.type === "text")
-      .map((b) => b.text)
-      .join("\n")
-      .replace(/```json|```/g, "")
-      .trim();
-
-    let scored = [];
-    try {
-      scored = JSON.parse(text);
-    } catch {
-      scored = [];
+    const content = (data.output || []).flatMap((item) => item.content || []);
+    const refusal = content.find((item) => item.type === "refusal");
+    if (refusal) {
+      res.status(422).json({ error: refusal.refusal || "Scoring request was refused." });
+      return;
     }
 
-    res.status(200).json({ scored });
+    const outputText = content.find((item) => item.type === "output_text")?.text || "";
+    const parsed = JSON.parse(outputText);
+    res.status(200).json({ scored: parsed.scores || [] });
   } catch (e) {
     res.status(500).json({ error: String(e.message || e) });
   }
