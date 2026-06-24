@@ -63,18 +63,6 @@ If you only want to work on the interface and are not testing scoring, `npm run 
 
 That gives you a live URL you can share. Because editions only unlock at set times, the refresh lock becomes genuinely binding once the app is deployed and running across sessions.
 
-## Safe public demo
-
-Open the app with `?demo=1` to show a seeded edition that does not require an account, accept API keys, call YouTube, invoke the scoring function, or persist user data:
-
-```text
-https://your-deployment.vercel.app/?demo=1
-```
-
-This mode is intended for screenshots and public product tours. The normal route remains the functioning self-hosted app and requires each deployer to configure their own server-side environment variables.
-
-For a public demo-only Vercel deployment, set `VITE_PUBLIC_DEMO=true` and do **not** set `OPENAI_API_KEY`. The demo will then open on every route, and the scoring function cannot make model calls. Keep the default build configuration for a functioning self-hosted instance.
-
 ## A few honest notes
 
 This is a prototype, and it behaves like one in a couple of places.
