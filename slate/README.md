@@ -22,7 +22,7 @@ The front end is React and Vite. The browser only sends goals, channels, and pro
 
 The slate builder runs server-side, in `api/build-slate.js`. This matters for two reasons. A browser should not hold private OpenAI, YouTube, or Supabase keys, and putting them in client code would expose them to anyone who opens the page. So the browser sends the goal configuration to that function, the function pulls YouTube candidates, reuses Supabase cache where possible, scores missing candidates with OpenAI, and returns the finished slate.
 
-Supabase is used as a backend cache and lightweight run log. It can store video metadata, scored goal/video matches, and generated slate runs so later requests can avoid re-fetching and re-scoring known videos.
+Supabase is something I personally used as a backend cache and lightweight run log. It can store video metadata, scored goal/video matches, and generated slate runs so later requests can avoid re-fetching and re-scoring known videos.
 
 To apply the cache schema manually, set `POSTGRES_URL_NON_POOLING` or `POSTGRES_URL` in `.env.local`, then run:
 
