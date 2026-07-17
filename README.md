@@ -17,15 +17,22 @@ Most feeds are built to never finish. Slate is built around the opposite idea �
 
 ## Run it
 
-The app lives in [`slate/`](slate/) — see its [README](slate/README.md) for the full walkthrough.
+The app lives in [`slate/`](slate/). You'll need Node 18+ and two API keys — an **OpenAI key** (relevance scoring) and a **YouTube Data API v3 key** (candidate search). Supabase is optional, for caching.
 
 ```bash
 cd slate
 npm install
-vercel dev     # runs the front end plus the serverless slate builder
+cp .env.example .env.local     # then paste your OPENAI_API_KEY and YOUTUBE_API_KEY
+vercel dev                     # runs the front end plus the serverless slate builder
 ```
 
-The slate builder runs server-side (`slate/api/build-slate.js`) so YouTube, OpenAI, and Supabase keys never reach the browser.
+`npm run dev` alone runs just the interface (no scoring). The slate builder runs server-side in `slate/api/build-slate.js`, so keys never reach the browser. Full setup — env vars, the optional Supabase cache schema, and quota notes — is in the [app README](slate/README.md).
+
+## Deploy
+
+Import the repo into Vercel (**set the project root directory to `slate/`**), add `OPENAI_API_KEY` and `YOUTUBE_API_KEY` under Environment Variables, and deploy. Editions only unlock at set times, so the refresh lock is only truly binding once it's running as a deployment. See [Deploying to Vercel](slate/README.md#deploying-to-vercel).
+
+> No public demo is live right now. Slate calls paid/quota-limited APIs with your own keys, so it's meant to be self-hosted rather than run as a shared demo.
 
 ## License
 
