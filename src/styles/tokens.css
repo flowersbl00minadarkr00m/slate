@@ -1,0 +1,26 @@
+/*
+ * Slate design tokens — the single source of truth for the palette and type.
+ * Declared with Tailwind v4 `@theme` so each token both emits a CSS custom
+ * property on :root (consumed by inline styles via `var(--color-…)` through
+ * `src/theme.js`) and generates the matching utilities (`bg-paper`,
+ * `text-ink`, `font-display`, …) for class-based styling.
+ */
+@theme {
+  /* Palette (was the `C` object in theme.js) */
+  --color-paper: #f4f2ec;
+  --color-ink: #111111;
+  --color-ink-soft: #5d5b55;
+  --color-pine: #111111;
+  --color-pine-deep: #050505;
+  --color-honey: #d9ff3f;
+  --color-honey-deep: #7d8f1a;
+  --color-mist: #d7d2c7;
+  --color-card: #fbfaf5;
+  --color-field: #fffdf7;
+  --color-danger: #b23a2e;
+
+  /* Type families */
+  --font-display: "Fraunces", Georgia, serif;
+  --font-body: "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
