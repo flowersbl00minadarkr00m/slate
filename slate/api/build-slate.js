@@ -10,6 +10,8 @@
 import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import pg from "pg";
+import { postgresPoolOptions } from "../lib/database-config.js";
+import { normalizeSlateRequest, RequestValidationError } from "../lib/request-validation.js";
 
 const YT = "https://www.googleapis.com/youtube/v3";
 const DEFAULT_MODEL = "gpt-5.5";
@@ -18,6 +20,9 @@ const CACHE_TTL_MS = 1000 * 60 * 60 * 24 * 7;
 let schemaReady = false;
 let pgPool = null;
 let lastCacheError = "";
+const requestWindows = new Map();
+const REQUEST_WINDOW_MS = 10 * 60 * 1000;
+const REQUEST_LIMIT = 10;
 
 const scoreSchema = {
   type: "object",
@@ -198,27 +203,11 @@ function postgresConnectionString() {
   return process.env.POSTGRES_URL_NON_POOLING || process.env.POSTGRES_URL || "";
 }
 
-function normalizePostgresConnectionString(connectionString) {
-  try {
-    const url = new URL(connectionString);
-    url.searchParams.delete("sslmode");
-    url.searchParams.delete("channel_binding");
-    return url.toString();
-  } catch {
-    return connectionString;
-  }
-}
-
 function getPool() {
   const rawConnectionString = postgresConnectionString();
   if (!rawConnectionString) return null;
-  const connectionString = normalizePostgresConnectionString(rawConnectionString);
   if (!pgPool) {
-    pgPool = new pg.Pool({
-      connectionString,
-      ssl: connectionString.includes("localhost") ? false : { rejectUnauthorized: false },
-      max: 2,
-    });
+    pgPool = new pg.Pool(postgresPoolOptions(rawConnectionString));
   }
   return pgPool;
 }
@@ -543,9 +532,40 @@ async function saveRun({ goals, channels, settings, slate, quotaUsed, cacheStats
   return true;
 }
 
+function requestKey(req) {
+  const forwarded = req.headers?.["x-forwarded-for"];
+  const value = Array.isArray(forwarded) ? forwarded[0] : forwarded;
+  return value?.split(",")[0]?.trim() || "unknown";
+}
+
+function allowRequest(req, now = Date.now()) {
+  const key = requestKey(req);
+  const current = requestWindows.get(key);
+  if (!current || now - current.startedAt >= REQUEST_WINDOW_MS) {
+    requestWindows.set(key, { startedAt: now, count: 1 });
+    return true;
+  }
+  if (current.count >= REQUEST_LIMIT) return false;
+  current.count += 1;
+  return true;
+}
+
 export default async function handler(req, res) {
+  res.setHeader("Cache-Control", "no-store");
+  res.setHeader("X-Content-Type-Options", "nosniff");
   if (req.method !== "POST") {
+    res.setHeader("Allow", "POST");
     res.status(405).json({ error: "Use POST." });
+    return;
+  }
+
+  if (process.env.SLATE_API_ENABLED !== "1") {
+    res.status(503).json({ error: "Slate generation is disabled on this deployment." });
+    return;
+  }
+  if (!allowRequest(req)) {
+    res.setHeader("Retry-After", "600");
+    res.status(429).json({ error: "Generation limit reached. Try again later." });
     return;
   }
 
@@ -561,21 +581,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body || {};
-    const goals = (body.goals || []).filter((g) => g.name && g.description);
-    const channels = body.channels || [];
-    const settings = {
-      minLengthMin: 8,
-      blockShorts: true,
-      feedCap: 12,
-      lookbackDays: 90,
-      ...(body.settings || {}),
-    };
-
-    if (!goals.length) {
-      res.status(400).json({ error: "Send at least one active goal." });
-      return;
-    }
+    const { goals, channels, settings } = normalizeSlateRequest(req.body);
 
     await ensureSupabaseSchema();
 
@@ -679,7 +685,11 @@ export default async function handler(req, res) {
       cacheStats,
       model: SCORE_MODEL,
     });
-  } catch (e) {
-    res.status(500).json({ error: String(e.message || e) });
+  } catch (error) {
+    if (error instanceof RequestValidationError) {
+      res.status(400).json({ error: error.message });
+      return;
+    }
+    res.status(502).json({ error: "Slate could not be generated from the configured services." });
   }
 }
