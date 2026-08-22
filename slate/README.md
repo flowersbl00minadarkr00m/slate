@@ -45,6 +45,11 @@ cp .env.example .env.local
 # then edit .env.local and paste your keys
 ```
 
+`SLATE_API_ENABLED=1` is an explicit opt-in because each generation spends
+YouTube quota and may spend OpenAI credits. If the deployment is reachable by
+other people, add Vercel Deployment Protection or a durable edge rate-limit
+rule for `/api/build-slate`; the in-function burst limit is only a backstop.
+
 The serverless builder lives under `api/`, which plain Vite does not run on its own. The simplest way to run both the app and the function locally is the Vercel CLI:
 
 ```bash
@@ -58,7 +63,7 @@ If you only want to work on the interface and are not testing scoring, `npm run 
 
 1. Push this repo to GitHub.
 2. In Vercel, import the repo. It will detect Vite and use the right build settings on its own.
-3. Under Settings, Environment Variables, add `OPENAI_API_KEY` and `YOUTUBE_API_KEY`. Optionally add `SLATE_MODEL` to override the default. If using Supabase caching, also add `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and the Vercel/Supabase Postgres connection string.
+3. Under Settings, Environment Variables, add `SLATE_API_ENABLED=1`, `OPENAI_API_KEY`, and `YOUTUBE_API_KEY`. Optionally add `SLATE_MODEL` to override the default. If using Supabase caching, also add `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and the Vercel/Supabase Postgres connection string.
 4. Deploy.
 
 That gives you a live URL you can share. Because editions only unlock at set times, the refresh lock becomes genuinely binding once the app is deployed and running across sessions.
