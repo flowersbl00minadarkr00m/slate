@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { C, DISPLAY, BODY, MONO } from "../theme.js";
 import { fmtMins } from "../lib/format.js";
 
@@ -25,8 +26,19 @@ function dayStreak(history) {
   return streak;
 }
 
+function Stat({ value, label }) {
+  return (
+    <div style={{ background: C.card, border: `1px solid ${C.ink}`, padding: "20px 22px" }}>
+      <p style={{ fontFamily: DISPLAY, fontWeight: 900, fontSize: 44, lineHeight: 1, color: C.ink }}>{value}</p>
+      <p className="mt-2 text-[10px] font-bold uppercase tracking-[0.22em]" style={{ color: C.inkSoft, fontFamily: MONO }}>
+        {label}
+      </p>
+    </div>
+  );
+}
+
 export function ReviewView({ history, goals }) {
-  const now = Date.now();
+  const [now] = useState(() => Date.now());
   const weekAgo = now - 7 * 86400000;
   const thisWeek = history.filter((h) => new Date(h.watchedAt).getTime() >= weekAgo);
 
@@ -38,15 +50,6 @@ export function ReviewView({ history, goals }) {
   const totalSec = history.reduce((s, h) => s + h.duration, 0);
   const weekSec = thisWeek.reduce((s, h) => s + h.duration, 0);
   const streak = dayStreak(history);
-
-  const Stat = ({ value, label }) => (
-    <div style={{ background: C.card, border: `1px solid ${C.ink}`, padding: "20px 22px" }}>
-      <p style={{ fontFamily: DISPLAY, fontWeight: 900, fontSize: 44, lineHeight: 1, color: C.ink }}>{value}</p>
-      <p className="mt-2 text-[10px] font-bold uppercase tracking-[0.22em]" style={{ color: C.inkSoft, fontFamily: MONO }}>
-        {label}
-      </p>
-    </div>
-  );
 
   if (!history.length) {
     return (

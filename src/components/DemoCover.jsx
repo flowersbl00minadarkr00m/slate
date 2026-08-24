@@ -24,7 +24,7 @@ export function DemoCover({ v }) {
   const ink = C.pineDeep;
   const honey = C.honey;
 
-  let art = null;
+  let art;
   if (motif === "arcs") {
     art = [0, 1, 2, 3, 4].map((i) => (
       <circle
