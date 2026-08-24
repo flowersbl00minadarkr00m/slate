@@ -2,7 +2,8 @@
 
 A YouTube front end that shows you a finite, goal-aligned set of videos each day, and then ends.
 
-![MIT license](https://img.shields.io/badge/license-MIT-black) 
+![MIT license](https://img.shields.io/badge/license-MIT-black)
+[![CI](https://github.com/flowersbl00minadarkr00m/slate/actions/workflows/ci.yml/badge.svg)](https://github.com/flowersbl00minadarkr00m/slate/actions/workflows/ci.yml)
 
 ![Slate demo edition — a programmed, finite feed](docs/hero.png)
 
