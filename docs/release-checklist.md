@@ -57,6 +57,15 @@ from deployment evidence that requires the separately authorized T5 operation.
 Every item in this section is intentionally pending. The local Vercel linkage
 is usable only for non-mutating checks and does not prove deployed state.
 
+Observed retry 4 evidence (partial; not a release verdict):
+
+- The single new canonical production deployment is READY and tied to commit `3c8be4328b5f3915b88249506e041c8e89eb46e8`.
+- Authenticated `GET /api/health` returned bounded HTTP 200 ready state with generation and provider configuration enabled; no secret fields were exposed.
+- Authenticated root response matched all nine checked-in security header values.
+- Authenticated `GET /api/score` returned a generic JSON HTTP 404 without stack, upstream, or credential-shaped content.
+- Authenticated ordinary and demo HTML shells contained the Slate root, title, and production asset markers. Full browser rendering was blocked by deployment-protection SSO.
+- No Firewall rule or draft was created. WAF and legitimate generation verification remain pending because the configured cache path would perform Supabase schema/cache/run writes outside this retry authorization.
+
 - [ ] Canonical deployment URL and commit — **PENDING T5**.
 - [ ] `GET /api/health` bounded response and no-paid-work check — **PENDING T5**.
 - [ ] Representative deployed `Content-Security-Policy`, HSTS, referrer,
