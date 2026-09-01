@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildSlate } from "../src/lib/slate.js";
+import { buildSlate } from "../api/lib/slate-builder.js";
 
 const makeVideo = (overrides = {}) => ({
   id: "video",

@@ -10,6 +10,10 @@
 import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import pg from "pg";
+import { getDatabaseConfig } from "./lib/database-config.js";
+import { createRateLimiter, getClientKey, getHeader, isAllowedOrigin } from "./lib/request-policy.js";
+import { RequestValidationError, normalizeRequestBody } from "./lib/request-validation.js";
+import { buildSlate } from "./lib/slate-builder.js";
 
 const YT = "https://www.googleapis.com/youtube/v3";
 const DEFAULT_MODEL = "gpt-5.5";
@@ -103,24 +107,6 @@ function normalizeVideo(row) {
   };
 }
 
-function buildSlate(scored, goals, settings) {
-  const MIN_SCORE = 50;
-  const eligible = scored.filter((v) => v.score >= MIN_SCORE);
-  const slate = [];
-  for (const goal of goals) {
-    let budget = Math.round((goal.weeklyMinutes / 7) * 60);
-    const candidates = eligible
-      .filter((v) => v.goalId === goal.id)
-      .sort((a, b) => b.score - a.score);
-    for (const video of candidates) {
-      if (budget <= 0) break;
-      slate.push({ ...video, status: "fresh" });
-      budget -= video.duration;
-    }
-  }
-  return slate.sort((a, b) => b.score - a.score).slice(0, settings.feedCap);
-}
-
 async function ytFetch(path, params, apiKey) {
   const qs = new URLSearchParams({ ...params, key: apiKey }).toString();
   const res = await fetch(`${YT}/${path}?${qs}`);
@@ -198,27 +184,19 @@ function postgresConnectionString() {
   return process.env.POSTGRES_URL_NON_POOLING || process.env.POSTGRES_URL || "";
 }
 
-function normalizePostgresConnectionString(connectionString) {
-  try {
-    const url = new URL(connectionString);
-    url.searchParams.delete("sslmode");
-    url.searchParams.delete("channel_binding");
-    return url.toString();
-  } catch {
-    return connectionString;
-  }
-}
-
 function getPool() {
   const rawConnectionString = postgresConnectionString();
   if (!rawConnectionString) return null;
-  const connectionString = normalizePostgresConnectionString(rawConnectionString);
+  let config;
+  try {
+    config = getDatabaseConfig(rawConnectionString);
+  } catch {
+    lastCacheError = "cache-unavailable";
+    return null;
+  }
+  if (!config) return null;
   if (!pgPool) {
-    pgPool = new pg.Pool({
-      connectionString,
-      ssl: connectionString.includes("localhost") ? false : { rejectUnauthorized: false },
-      max: 2,
-    });
+    pgPool = new pg.Pool(config);
   }
   return pgPool;
 }
@@ -234,9 +212,9 @@ async function ensureSupabaseSchema() {
     await pool.query(sql);
     schemaReady = true;
     return true;
-  } catch (error) {
-    lastCacheError = error?.message || String(error);
-    console.warn("Slate cache schema initialization skipped:", error?.message || error);
+  } catch {
+    lastCacheError = "cache-unavailable";
+    console.warn("Slate cache unavailable", { code: "cache-unavailable" });
     return false;
   }
 }
@@ -543,143 +521,187 @@ async function saveRun({ goals, channels, settings, slate, quotaUsed, cacheStats
   return true;
 }
 
-export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    res.status(405).json({ error: "Use POST." });
-    return;
-  }
-
+async function buildSlateRequest(body) {
   const openaiKey = process.env.OPENAI_API_KEY;
   const youtubeKey = process.env.YOUTUBE_API_KEY;
-  if (!openaiKey) {
-    res.status(500).json({ error: "OPENAI_API_KEY is not set on the server." });
-    return;
-  }
-  if (!youtubeKey) {
-    res.status(500).json({ error: "YOUTUBE_API_KEY is not set on the server." });
-    return;
+  if (!openaiKey || !youtubeKey) throw new Error("Provider configuration incomplete.");
+
+  const { goals, channels, settings } = body;
+  await ensureSupabaseSchema();
+
+  let quotaUsed = 0;
+  const queryJobs = [];
+  for (const goal of goals) {
+    const queries = String(goal.keywords || goal.name)
+      .split(",")
+      .map((query) => query.trim())
+      .filter(Boolean)
+      .slice(0, 2);
+    for (const query of queries) {
+      queryJobs.push(searchVideos(query, youtubeKey, settings.lookbackDays));
+    }
   }
 
-  try {
-    const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body || {};
-    const goals = (body.goals || []).filter((g) => g.name && g.description);
-    const channels = body.channels || [];
-    const settings = {
-      minLengthMin: 8,
-      blockShorts: true,
-      feedCap: 12,
-      lookbackDays: 90,
-      ...(body.settings || {}),
-    };
+  const querySettled = await Promise.allSettled(queryJobs);
+  quotaUsed += queryJobs.length * 100;
+  const ids = new Set();
+  const queryErrors = [];
+  for (const result of querySettled) {
+    if (result.status === "fulfilled") {
+      result.value.forEach((id) => ids.add(id));
+    } else {
+      queryErrors.push(result.reason?.message || String(result.reason));
+    }
+  }
 
-    if (!goals.length) {
-      res.status(400).json({ error: "Send at least one active goal." });
+  if (!ids.size && queryErrors.length) {
+    const fallback = await getCachedScoredCandidates(goals, settings.feedCap * 3);
+    if (fallback.scored.length) {
+      const slate = buildSlate(fallback.scored, goals, settings);
+      const cacheStats = {
+        postgresConfigured: Boolean(postgresConnectionString()),
+        supabaseAvailable: fallback.available,
+        cacheError: "",
+        fallback: "youtube-search-failed",
+        videoHits: fallback.scored.length,
+        videoMisses: 0,
+        scoreHits: fallback.scored.length,
+        scoreMisses: 0,
+      };
+      await saveRun({ goals, channels, settings, slate, quotaUsed, cacheStats });
+      return { videos: slate, quotaUsed, cacheStats, model: SCORE_MODEL };
+    }
+    throw new Error(queryErrors[0]);
+  }
+
+  if (channels.length) {
+    const channelResults = await Promise.allSettled(
+      channels.map((channel) => channelUploads(channel, youtubeKey))
+    );
+    for (const result of channelResults) {
+      if (result.status === "fulfilled") {
+        result.value.forEach((id) => ids.add(id));
+        quotaUsed += 2;
+      }
+    }
+  }
+
+  const allIds = [...ids];
+  const cachedVideos = await getCachedVideos(allIds);
+  const missingIds = allIds.filter((id) => !cachedVideos.hitIds.has(id));
+  const fetchedVideos = await videoDetails(missingIds, youtubeKey);
+  quotaUsed += Math.ceil(missingIds.length / 50);
+  await cacheVideos(fetchedVideos);
+
+  const minSec = settings.minLengthMin * 60;
+  const filteredCandidates = [...cachedVideos.videos, ...fetchedVideos].filter((video) => {
+    if (settings.blockShorts && video.duration < 180) return false;
+    return video.duration >= minSec;
+  });
+  const maxCandidates = Math.min(60, Math.max(settings.feedCap * 6, 36));
+  const candidates = filteredCandidates
+    .sort(
+      (a, b) =>
+        popularityScore(b) * 0.7 +
+        freshnessScore(b) * 0.3 -
+        (popularityScore(a) * 0.7 + freshnessScore(a) * 0.3)
+    )
+    .slice(0, maxCandidates);
+
+  const scoredResult = await scoreAll(candidates, goals, openaiKey);
+  const slate = buildSlate(scoredResult.scored, goals, settings);
+  const cacheStats = {
+    postgresConfigured: Boolean(postgresConnectionString()),
+    supabaseAvailable: cachedVideos.available && scoredResult.cacheAvailable,
+    cacheError: lastCacheError ? "cache-unavailable" : "",
+    videoHits: cachedVideos.videos.length,
+    videoMisses: fetchedVideos.length,
+    scoreHits: scoredResult.scoreHits,
+    scoreMisses: scoredResult.scoreMisses,
+  };
+
+  await saveRun({ goals, channels, settings, slate, quotaUsed, cacheStats });
+
+  return {
+    videos: slate,
+    quotaUsed,
+    cacheStats,
+    model: SCORE_MODEL,
+  };
+}
+
+function setSecurityHeaders(res) {
+  res.setHeader("Cache-Control", "no-store");
+  res.setHeader("X-Content-Type-Options", "nosniff");
+}
+
+function sendError(res, status, code, error, requestId) {
+  const body = { error, code };
+  if (requestId) body.requestId = requestId;
+  res.status(status).json(body);
+}
+
+export function createBuildSlateHandler({
+  env = process.env,
+  builder = buildSlateRequest,
+  limiter = createRateLimiter(),
+  requestId = () => `req_${crypto.randomUUID()}`,
+} = {}) {
+  return async function handler(req, res) {
+    setSecurityHeaders(res);
+
+    if (req.method !== "POST") {
+      res.setHeader("Allow", "POST");
+      sendError(res, 405, "method-not-allowed", "Method not allowed.");
       return;
     }
 
-    await ensureSupabaseSchema();
-
-    let quotaUsed = 0;
-    const queryJobs = [];
-    for (const goal of goals) {
-      const queries = String(goal.keywords || goal.name)
-        .split(",")
-        .map((q) => q.trim())
-        .filter(Boolean)
-        .slice(0, 2);
-      for (const query of queries) {
-        queryJobs.push(searchVideos(query, youtubeKey, settings.lookbackDays));
-      }
+    if (getHeader(req, "content-type").split(";", 1)[0].trim().toLowerCase() !== "application/json") {
+      sendError(res, 415, "unsupported-media-type", "JSON is required.");
+      return;
     }
 
-    const querySettled = await Promise.allSettled(queryJobs);
-    quotaUsed += queryJobs.length * 100;
-    const ids = new Set();
-    const queryErrors = [];
-    for (const result of querySettled) {
-      if (result.status === "fulfilled") {
-        result.value.forEach((id) => ids.add(id));
-      } else {
-        queryErrors.push(result.reason?.message || String(result.reason));
-      }
+    if (!isAllowedOrigin(req, env.SLATE_ALLOWED_ORIGINS || "")) {
+      sendError(res, 403, "origin-not-allowed", "Origin is not allowed.");
+      return;
     }
 
-    if (!ids.size && queryErrors.length) {
-      const fallback = await getCachedScoredCandidates(goals, settings.feedCap * 3);
-      if (fallback.scored.length) {
-        const slate = buildSlate(fallback.scored, goals, settings);
-        const cacheStats = {
-          postgresConfigured: Boolean(postgresConnectionString()),
-          supabaseAvailable: fallback.available,
-          cacheError: "",
-          fallback: "youtube-search-failed",
-          videoHits: fallback.scored.length,
-          videoMisses: 0,
-          scoreHits: fallback.scored.length,
-          scoreMisses: 0,
-        };
-        await saveRun({ goals, channels, settings, slate, quotaUsed, cacheStats });
-        res.status(200).json({ videos: slate, quotaUsed, cacheStats, model: SCORE_MODEL });
+    if (env.SLATE_API_ENABLED !== "1") {
+      sendError(res, 503, "generation-disabled", "Slate generation is not enabled.");
+      return;
+    }
+
+    const rate = limiter.check(getClientKey(req));
+    if (!rate.allowed) {
+      res.setHeader("Retry-After", String(rate.retryAfter));
+      sendError(res, 429, "rate-limited", "Too many requests. Try again later.");
+      return;
+    }
+
+    let body;
+    try {
+      body = normalizeRequestBody(req.body);
+    } catch (error) {
+      if (error instanceof RequestValidationError) {
+        sendError(res, 400, error.code, error.message);
         return;
       }
-      throw new Error(queryErrors[0]);
+      throw error;
     }
 
-    if (channels.length) {
-      const channelResults = await Promise.allSettled(
-        channels.map((channel) => channelUploads(channel, youtubeKey))
-      );
-      for (const result of channelResults) {
-        if (result.status === "fulfilled") {
-          result.value.forEach((id) => ids.add(id));
-          quotaUsed += 2;
-        }
-      }
+    if (!env.OPENAI_API_KEY || !env.YOUTUBE_API_KEY) {
+      sendError(res, 503, "provider-not-configured", "Slate generation is not configured.");
+      return;
     }
 
-    const allIds = [...ids];
-    const cachedVideos = await getCachedVideos(allIds);
-    const missingIds = allIds.filter((id) => !cachedVideos.hitIds.has(id));
-    const fetchedVideos = await videoDetails(missingIds, youtubeKey);
-    quotaUsed += Math.ceil(missingIds.length / 50);
-    await cacheVideos(fetchedVideos);
-
-    const minSec = settings.minLengthMin * 60;
-    const filteredCandidates = [...cachedVideos.videos, ...fetchedVideos].filter((v) => {
-      if (settings.blockShorts && v.duration < 180) return false;
-      return v.duration >= minSec;
-    });
-    const maxCandidates = Math.min(60, Math.max(settings.feedCap * 6, 36));
-    const candidates = filteredCandidates
-      .sort(
-        (a, b) =>
-          popularityScore(b) * 0.7 +
-          freshnessScore(b) * 0.3 -
-          (popularityScore(a) * 0.7 + freshnessScore(a) * 0.3)
-      )
-      .slice(0, maxCandidates);
-
-    const scoredResult = await scoreAll(candidates, goals, openaiKey);
-    const slate = buildSlate(scoredResult.scored, goals, settings);
-    const cacheStats = {
-      postgresConfigured: Boolean(postgresConnectionString()),
-      supabaseAvailable: cachedVideos.available && scoredResult.cacheAvailable,
-      cacheError: lastCacheError ? "cache-unavailable" : "",
-      videoHits: cachedVideos.videos.length,
-      videoMisses: fetchedVideos.length,
-      scoreHits: scoredResult.scoreHits,
-      scoreMisses: scoredResult.scoreMisses,
-    };
-
-    await saveRun({ goals, channels, settings, slate, quotaUsed, cacheStats });
-
-    res.status(200).json({
-      videos: slate,
-      quotaUsed,
-      cacheStats,
-      model: SCORE_MODEL,
-    });
-  } catch (e) {
-    res.status(500).json({ error: String(e.message || e) });
-  }
+    try {
+      res.status(200).json(await builder(body));
+    } catch {
+      const id = requestId();
+      console.error("Slate generation failed", { requestId: id, code: "internal-error" });
+      sendError(res, 500, "internal-error", "Slate generation failed.", id);
+    }
+  };
 }
+
+export default createBuildSlateHandler();
