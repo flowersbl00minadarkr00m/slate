@@ -11,7 +11,13 @@ import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import pg from "pg";
 import { getDatabaseConfig } from "./lib/database-config.js";
-import { createRateLimiter, getClientKey, getHeader, isAllowedOrigin } from "./lib/request-policy.js";
+import {
+  createRateLimiter,
+  getClientKey,
+  getHeader,
+  isAllowedOrigin,
+  setSecurityHeaders,
+} from "./lib/request-policy.js";
 import { RequestValidationError, normalizeRequestBody } from "./lib/request-validation.js";
 import { buildSlate } from "./lib/slate-builder.js";
 
@@ -630,15 +636,15 @@ async function buildSlateRequest(body) {
   };
 }
 
-function setSecurityHeaders(res) {
-  res.setHeader("Cache-Control", "no-store");
-  res.setHeader("X-Content-Type-Options", "nosniff");
-}
-
 function sendError(res, status, code, error, requestId) {
   const body = { error, code };
   if (requestId) body.requestId = requestId;
   res.status(status).json(body);
+}
+
+function safeErrorClass(error) {
+  const candidate = error?.name || error?.constructor?.name;
+  return typeof candidate === "string" && candidate.trim() ? candidate.trim() : "UnknownError";
 }
 
 export function createBuildSlateHandler({
@@ -696,9 +702,12 @@ export function createBuildSlateHandler({
 
     try {
       res.status(200).json(await builder(body));
-    } catch {
+    } catch (error) {
       const id = requestId();
-      console.error("Slate generation failed", { requestId: id, code: "internal-error" });
+      console.error("Slate generation failed", {
+        requestId: id,
+        errorClass: safeErrorClass(error),
+      });
       sendError(res, 500, "internal-error", "Slate generation failed.", id);
     }
   };

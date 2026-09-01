@@ -215,18 +215,26 @@ describe("build-slate route", () => {
 
     expect(response.statusCode).toBe(200);
     expect(response.body).toEqual({ videos: [{ id: "video-1" }], quotaUsed: 1 });
+    expect(response.headers["cache-control"]).toBe("no-store");
+    expect(response.headers["x-content-type-options"]).toBe("nosniff");
     expect(builder).toHaveBeenCalledWith(validBody);
   });
 
   it("returns a bounded request id and safe code for unexpected failures", async () => {
     const leakedDetail = "untrusted failure detail";
-    const builder = vi.fn().mockRejectedValue(new Error(leakedDetail));
+    const failure = new Error(leakedDetail);
+    failure.name = "ProviderFailure";
+    const builder = vi.fn().mockRejectedValue(failure);
     const logged = vi.spyOn(console, "error").mockImplementation(() => {});
     const { response } = await invoke({ builder });
 
     expect(response.statusCode).toBe(500);
     expect(response.body).toMatchObject({ error: "Slate generation failed.", code: "internal-error" });
     expect(response.body.requestId).toMatch(/^req_[a-f0-9-]+$/);
+    expect(logged).toHaveBeenCalledWith("Slate generation failed", {
+      requestId: response.body.requestId,
+      errorClass: "ProviderFailure",
+    });
     expect(JSON.stringify(response.body)).not.toContain(leakedDetail);
     expect(logged.mock.calls.flat().join(" ")).not.toContain(leakedDetail);
   });
@@ -252,6 +260,8 @@ describe("health route", () => {
       providersConfigured: true,
       cacheConfigured: true,
     });
+    expect(response.headers["cache-control"]).toBe("no-store");
+    expect(response.headers["x-content-type-options"]).toBe("nosniff");
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 

@@ -1,7 +1,4 @@
-function setSecurityHeaders(res) {
-  res.setHeader("Cache-Control", "no-store");
-  res.setHeader("X-Content-Type-Options", "nosniff");
-}
+import { setSecurityHeaders } from "./lib/request-policy.js";
 
 function hasProviderConfiguration(env) {
   return Boolean(env.OPENAI_API_KEY && env.YOUTUBE_API_KEY);

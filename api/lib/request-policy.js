@@ -9,6 +9,11 @@ export function getHeader(req, name) {
   return Array.isArray(value) ? value[0] || "" : String(value || "");
 }
 
+export function setSecurityHeaders(res) {
+  res.setHeader("Cache-Control", "no-store");
+  res.setHeader("X-Content-Type-Options", "nosniff");
+}
+
 export function getClientKey(req) {
   const forwarded = getHeader(req, "x-vercel-forwarded-for");
   return forwarded.split(",")[0].trim() || "unknown";
