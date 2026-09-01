@@ -35,10 +35,13 @@ from deployment evidence that requires the separately authorized T5 operation.
   favicon is local.
 - [x] `style-src` and `style-src-elem` remain `'self'`.
 - [x] `style-src-attr 'unsafe-inline'` is the exact limited exception required
-  by the three remaining runtime-computed progress-width attributes in
-  `GoalMeter.jsx` and `ReviewView.jsx`. This is **not** a strict style CSP
-  claim; removing the exception requires an application change outside T4 or
-  an explicitly approved disposition.
+  by four source style-attribute call sites: three runtime-computed
+  progress-width attributes (two in `GoalMeter.jsx` and one in
+  `ReviewView.jsx`) plus the pre-existing `Btn.jsx` variant style object used
+  across the app's buttons. The current CSP function remains unchanged. This
+  is **not** a strict style CSP claim; removing the exception requires
+  migrating all four call sites, which is outside T4 or requires an explicitly
+  approved disposition.
 - [ ] Deployed CSP plus core ordinary/demo UI and YouTube thumbnail/embed
   behavior — **PENDING T5 deployed verification**.
 
