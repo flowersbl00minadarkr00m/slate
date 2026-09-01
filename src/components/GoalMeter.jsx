@@ -1,4 +1,3 @@
-import { C, DISPLAY, MONO } from "../theme.js";
 import { fmtMins } from "../lib/format.js";
 
 export function GoalMeter({ goal, videos }) {
@@ -14,21 +13,21 @@ export function GoalMeter({ goal, videos }) {
   return (
     <div className="mb-3">
       <div className="flex items-baseline justify-between mb-1.5">
-        <h3 style={{ fontFamily: DISPLAY, fontSize: 20, fontWeight: 600, color: C.ink }}>
+        <h3 className="font-display text-[20px] font-semibold text-ink">
           {goal.name}
         </h3>
-        <span style={{ fontFamily: MONO, fontSize: 11, color: C.inkSoft }}>
+        <span className="font-mono text-[11px] text-ink-soft">
           {fmtMins(watched)} watched / {fmtMins(dailySec)} daily budget
         </span>
       </div>
-      <div className="h-2 rounded-full overflow-hidden relative" style={{ background: C.mist }}>
+      <div className="relative h-2 overflow-hidden rounded-full bg-mist">
         <div
-          className="absolute inset-y-0 left-0 rounded-full"
-          style={{ width: `${pctProg}%`, background: "#C5D4CE" }}
+          className="absolute inset-y-0 left-0 rounded-full bg-[#c5d4ce]"
+          style={{ width: `${pctProg}%` }}
         />
         <div
-          className="absolute inset-y-0 left-0 rounded-full"
-          style={{ width: `${pctWatch}%`, background: C.honey }}
+          className="absolute inset-y-0 left-0 rounded-full bg-honey"
+          style={{ width: `${pctWatch}%` }}
         />
       </div>
     </div>

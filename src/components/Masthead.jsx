@@ -1,4 +1,4 @@
-import { C, DISPLAY, MONO, DEMO_MODE } from "../theme.js";
+import { DEMO_MODE } from "../theme.js";
 import { Btn } from "./Btn.jsx";
 
 /* Compressed single-band masthead (spec T7): wordmark + tagline + nav in
@@ -6,35 +6,26 @@ import { Btn } from "./Btn.jsx";
    loosened to -0.04em — the old -0.08em clipped the final glyph. */
 export function Masthead({ view, setView }) {
   return (
-    <header className="pb-5 mb-8" style={{ borderBottom: `1px solid ${C.ink}` }}>
+    <header className="mb-8 border-b border-ink pb-5">
       <div className="flex items-end justify-between gap-6 flex-wrap">
         <div className="flex items-end gap-5">
           <h1
-            className="leading-[0.85] uppercase"
-            style={{
-              fontFamily: DISPLAY,
-              fontWeight: 900,
-              fontSize: "clamp(48px, 7vw, 96px)",
-              letterSpacing: "-0.04em",
-              color: C.ink,
-            }}
+            className="font-display text-[clamp(48px,7vw,96px)] font-black uppercase leading-[0.85] tracking-[-0.04em] text-ink"
           >
             Slate
           </h1>
           <div className="pb-1.5">
             <p
-              className="text-[10px] font-bold uppercase tracking-[0.3em]"
-              style={{ color: C.inkSoft, fontFamily: MONO }}
+              className="text-[10px] font-bold uppercase tracking-[0.3em] text-ink-soft font-mono"
             >
               Programmed media / finite feed
             </p>
-            <p className="mt-1 text-lg leading-tight" style={{ color: C.ink, fontFamily: DISPLAY }}>
+            <p className="mt-1 text-lg leading-tight text-ink font-display">
               A feed that ends.
             </p>
             {DEMO_MODE && (
               <span
-                className="inline-block mt-1.5 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.2em]"
-                style={{ background: C.honey, color: C.ink, fontFamily: MONO }}
+                className="mt-1.5 inline-block bg-honey px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.2em] text-ink font-mono"
               >
                 DEMO EDITION
               </span>
@@ -42,7 +33,7 @@ export function Masthead({ view, setView }) {
           </div>
         </div>
         <div className="flex flex-col items-end gap-2 pb-1.5">
-          <p className="text-xs uppercase tracking-[0.18em]" style={{ color: C.inkSoft, fontFamily: MONO }}>
+          <p className="text-xs uppercase tracking-[0.18em] text-ink-soft font-mono">
             {new Date().toLocaleDateString("en-CA", {
               weekday: "long",
               month: "long",

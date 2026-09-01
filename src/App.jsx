@@ -9,7 +9,7 @@ import { useState, useMemo, useCallback, useEffect, useRef } from "react";
    components/ and views/, shared logic in lib/ and theme.js.
    ============================================================ */
 
-import { C, MONO, DEMO_MODE } from "./theme.js";
+import { DEMO_MODE } from "./theme.js";
 import { nextUnlock, uid } from "./lib/format.js";
 import { seedGoals, seedDemoVideos, defaultSettings } from "./lib/seeds.js";
 import {
@@ -370,8 +370,8 @@ export default function App() {
   const firstRun = storageStatus.status === "empty" && persistenceGate === "empty";
 
   return (
-    <div style={{ background: C.paper, minHeight: "100vh", color: C.ink }}>
-      <div className="mx-auto px-6 py-8 md:px-10 md:py-10" style={{ maxWidth: 1320 }}>
+    <div className="min-h-screen bg-paper text-ink">
+      <div className="mx-auto max-w-[1320px] px-6 py-8 md:px-10 md:py-10">
         <Masthead view={view} setView={setView} />
         <StorageNotice status={storageStatus} onRetry={persistCurrentState} onExport={exportBackup} />
         {view === "settings" ? (
@@ -421,8 +421,7 @@ export default function App() {
           />
         )}
         <footer
-          className="mt-16 pt-4 text-xs flex justify-between"
-          style={{ borderTop: `1px solid ${C.mist}`, color: C.inkSoft, fontFamily: MONO }}
+          className="mt-16 flex justify-between border-t border-mist pt-4 text-xs text-ink-soft font-mono"
         >
           <span>Slate — the feed that ends</span>
           <span>{DEMO_MODE ? "seeded demo · no external requests" : "local-first · your data stays in this browser"}</span>

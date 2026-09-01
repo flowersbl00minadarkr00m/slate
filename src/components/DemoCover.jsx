@@ -1,4 +1,4 @@
-import { C, MONO } from "../theme.js";
+import { C } from "../theme.js";
 import { fmtDur } from "../lib/format.js";
 
 /* Bundled duotone cover art for demo cards (spec T8) — replaces the flat
@@ -21,7 +21,6 @@ export function DemoCover({ v }) {
   const seed = hash(v.title || v.demoLabel || "slate");
   const motif = MOTIFS[seed % MOTIFS.length];
   const rot = (seed >> 3) % 4;
-  const ink = C.pineDeep;
   const honey = C.honey;
 
   let art;
@@ -66,15 +65,15 @@ export function DemoCover({ v }) {
   }
 
   return (
-    <div className="relative w-full" style={{ aspectRatio: "16 / 9", background: ink, overflow: "hidden" }}>
+    <div className="relative w-full aspect-video bg-pine-deep overflow-hidden">
       <svg viewBox="0 0 320 180" preserveAspectRatio="xMidYMid slice" className="absolute inset-0 w-full h-full" aria-hidden="true">
         {art}
       </svg>
       <div className="absolute inset-0 flex items-end justify-between p-3">
-        <span style={{ fontFamily: MONO, fontSize: 11, letterSpacing: "0.12em", color: "#fff" }}>
+        <span className="font-mono text-[11px] tracking-[0.12em] text-white">
           {v.demoLabel || "SLATE DEMO"}
         </span>
-        <span className="px-1.5 py-0.5" style={{ background: honey, color: C.ink, fontFamily: MONO, fontSize: 11 }}>
+        <span className="bg-honey px-1.5 py-0.5 font-mono text-[11px] text-ink">
           {fmtDur(v.duration)}
         </span>
       </div>

@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { C, DISPLAY, BODY, MONO, inputStyle } from "../theme.js";
 import { uid } from "../lib/format.js";
 import { Btn } from "../components/Btn.jsx";
 import { Field } from "../components/Field.jsx";
+
+const inputClass = "w-full rounded-none border border-ink bg-field px-3.5 py-3.5 text-[15px] text-ink outline-none font-body";
+const textareaClass = `${inputClass} min-h-[70px] resize-y`;
 
 export function SettingsView({
   goals,
@@ -44,27 +46,24 @@ export function SettingsView({
     <div className="space-y-14">
       {ro && (
         <div
-          className="p-4 text-sm"
-          style={{ background: C.card, border: `1px solid ${C.ink}`, fontFamily: BODY, color: C.inkSoft }}
+          className="border border-ink bg-card p-4 text-sm text-ink-soft font-body"
         >
-          <strong style={{ color: C.ink }}>Demo edition.</strong> This is the programming screen the
+          <strong className="text-ink">Demo edition.</strong> This is the programming screen the
           self-hosted app uses to define goals, channels, and edition times. Inputs are read-only here.
         </div>
       )}
       <fieldset
         disabled={ro}
-        className="space-y-14"
-        style={{ border: 0, padding: 0, margin: 0, minInlineSize: "auto" }}
+        className="m-0 space-y-14 border-0 p-0 [min-inline-size:auto]"
       >
       <section>
         <div className="grid gap-6 md:grid-cols-[0.65fr_1fr] items-end">
           <h2
-            className="uppercase leading-none"
-            style={{ fontFamily: DISPLAY, fontSize: "clamp(44px, 8vw, 96px)", fontWeight: 900, letterSpacing: "-0.06em", color: C.ink }}
+            className="font-display text-[clamp(44px,8vw,96px)] font-black uppercase leading-none tracking-[-0.06em] text-ink"
           >
             Goals
           </h2>
-          <p className="max-w-xl text-lg leading-snug" style={{ color: C.inkSoft, fontFamily: BODY }}>
+          <p className="max-w-xl text-lg leading-snug text-ink-soft font-body">
             Each goal gets a weekly time budget. The slate is programmed to fill it — and stop.
           </p>
         </div>
@@ -72,14 +71,13 @@ export function SettingsView({
           {goals.map((g, goalIndex) => (
             <div
               key={g.id}
-              className="p-6 md:p-8"
-              style={{ background: C.card, border: `1px solid ${C.ink}`, boxShadow: `10px 10px 0 ${C.ink}` }}
+              className="border border-ink bg-card p-6 shadow-[10px_10px_0_var(--color-ink)] md:p-8"
             >
-              <div className="mb-6 flex items-center justify-between border-b pb-3" style={{ borderColor: C.ink }}>
-                <span className="text-[10px] font-bold uppercase tracking-[0.28em]" style={{ fontFamily: MONO }}>
+              <div className="mb-6 flex items-center justify-between border-b border-ink pb-3">
+                <span className="text-[10px] font-bold uppercase tracking-[0.28em] font-mono">
                   Program block
                 </span>
-                <span className="text-[10px] font-bold uppercase tracking-[0.28em]" style={{ fontFamily: MONO, color: C.inkSoft }}>
+                <span className="text-[10px] font-bold uppercase tracking-[0.28em] text-ink-soft font-mono">
                   {g.weeklyMinutes} min / week
                 </span>
               </div>
@@ -88,7 +86,7 @@ export function SettingsView({
                   <input
                     id={goalIndex === 0 ? "first-goal" : undefined}
                     ref={goalIndex === 0 ? firstGoalRef : undefined}
-                    style={inputStyle}
+                    className={inputClass}
                     value={g.name}
                     onChange={(e) =>
                       setGoals((gs) =>
@@ -100,7 +98,7 @@ export function SettingsView({
                 <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
                   <Field label="Ends">
                     <input
-                      style={inputStyle}
+                      className={inputClass}
                       type="date"
                       value={g.endDate}
                       onChange={(e) =>
@@ -112,7 +110,7 @@ export function SettingsView({
                   </Field>
                   <Field label="Weekly budget (min)">
                     <input
-                      style={inputStyle}
+                      className={inputClass}
                       type="number"
                       min="10"
                       value={g.weeklyMinutes}
@@ -128,7 +126,7 @@ export function SettingsView({
               <div className="mt-4 grid gap-4 grid-cols-1 md:grid-cols-2">
                 <Field label="What counts (used by the relevance scorer)">
                   <textarea
-                    style={{ ...inputStyle, minHeight: 70, resize: "vertical" }}
+                    className={textareaClass}
                     value={g.description}
                     onChange={(e) =>
                       setGoals((gs) =>
@@ -139,7 +137,7 @@ export function SettingsView({
                 </Field>
                 <Field label="Search queries (comma-separated, max 2 used)">
                   <textarea
-                    style={{ ...inputStyle, minHeight: 70, resize: "vertical" }}
+                    className={textareaClass}
                     value={g.keywords}
                     onChange={(e) =>
                       setGoals((gs) =>
@@ -153,8 +151,7 @@ export function SettingsView({
                 <button
                   type="button"
                   onClick={() => setGoals((gs) => gs.filter((x) => x.id !== g.id))}
-                  className="text-xs hover:opacity-70"
-                  style={{ color: C.danger, fontFamily: BODY }}
+                  className="text-xs text-danger hover:opacity-70 font-body"
                 >
                   Remove goal
                 </button>
@@ -183,14 +180,14 @@ export function SettingsView({
       </section>
 
       <section>
-        <h2 style={{ fontFamily: DISPLAY, fontSize: 24, fontWeight: 600, color: C.ink }}>Channels</h2>
-        <p className="mt-1 text-sm" style={{ color: C.inkSoft, fontFamily: BODY }}>
+        <h2 className="font-display text-[24px] font-semibold text-ink">Channels</h2>
+        <p className="mt-1 text-sm text-ink-soft font-body">
           Uploads from these channels join the candidate pool. They're ranked on relevance alone — no
           home-team advantage.
         </p>
         <div className="mt-4 flex gap-2 max-w-xl">
           <input
-            style={inputStyle}
+            className={inputClass}
             value={channelInput}
             onChange={(e) => setChannelInput(e.target.value)}
             placeholder="@handle or channel ID (UC...)"
@@ -206,15 +203,13 @@ export function SettingsView({
           {channels.map((ch) => (
             <span
               key={ch}
-              className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs"
-              style={{ background: C.mist, color: C.ink, fontFamily: MONO }}
+              className="inline-flex items-center gap-2 rounded-full bg-mist px-3 py-1 text-xs text-ink font-mono"
             >
               {ch}
               <button
                 type="button"
                 onClick={() => setChannels((cs) => cs.filter((candidate) => candidate !== ch))}
-                style={{ color: C.inkSoft }}
-                className="hover:opacity-70"
+                className="text-ink-soft hover:opacity-70"
               >
                 ×
               </button>
@@ -224,11 +219,11 @@ export function SettingsView({
       </section>
 
       <section>
-        <h2 style={{ fontFamily: DISPLAY, fontSize: 24, fontWeight: 600, color: C.ink }}>The rules</h2>
+        <h2 className="font-display text-[24px] font-semibold text-ink">The rules</h2>
         <div className="mt-4 grid gap-4 max-w-3xl grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
           <Field label="Min length (min)">
             <input
-              style={inputStyle}
+              className={inputClass}
               type="number"
               min="0"
               value={settings.minLengthMin}
@@ -237,7 +232,7 @@ export function SettingsView({
           </Field>
           <Field label="Slate cap (videos)">
             <input
-              style={inputStyle}
+              className={inputClass}
               type="number"
               min="3"
               max="30"
@@ -247,7 +242,7 @@ export function SettingsView({
           </Field>
           <Field label="Morning edition">
             <input
-              style={inputStyle}
+              className={inputClass}
               type="time"
               value={settings.refreshTimes[0]}
               onChange={(e) =>
@@ -257,7 +252,7 @@ export function SettingsView({
           </Field>
           <Field label="Evening edition">
             <input
-              style={inputStyle}
+              className={inputClass}
               type="time"
               value={settings.refreshTimes[1]}
               onChange={(e) =>
@@ -267,7 +262,7 @@ export function SettingsView({
           </Field>
           <Field label="Lookback (days)">
             <input
-              style={inputStyle}
+              className={inputClass}
               type="number"
               min="7"
               max="365"
@@ -277,28 +272,26 @@ export function SettingsView({
           </Field>
         </div>
         <label
-          className="mt-4 flex items-center gap-3 text-sm"
-          style={{ fontFamily: BODY, color: C.ink }}
+          className="mt-4 flex items-center gap-3 text-sm text-ink font-body"
         >
           <input
             type="checkbox"
             checked={settings.blockShorts}
             onChange={(e) => setSettings((s) => ({ ...s, blockShorts: e.target.checked }))}
-            style={{ accentColor: C.pine, width: 16, height: 16 }}
+            className="h-4 w-4 accent-pine"
           />
           Block Shorts (anything under 3 minutes)
         </label>
       </section>
 
       <section
-        className="rounded-lg p-5 flex items-center justify-between"
-        style={{ background: C.pineDeep }}
+        className="flex items-center justify-between rounded-lg bg-pine-deep p-5"
       >
         <div>
-          <p style={{ fontFamily: DISPLAY, fontSize: 18, fontWeight: 600, color: "#fff" }}>
+          <p className="font-display text-[18px] font-semibold text-white">
             Ready to air?
           </p>
-          <p className="text-xs mt-1" style={{ color: "#C9D6D1", fontFamily: BODY }}>
+          <p className="mt-1 text-xs text-[#c9d6d1] font-body">
             {activeGoals.length} active goal{activeGoals.length !== 1 ? "s" : ""} · {channels.length}{" "}
             channel{channels.length !== 1 ? "s" : ""} · editions at {settings.refreshTimes.join(" and ")}
           </p>
@@ -310,18 +303,17 @@ export function SettingsView({
 
       {!ro && (
         <section aria-labelledby="local-data-heading" className="max-w-3xl">
-          <h2 id="local-data-heading" style={{ fontFamily: DISPLAY, fontSize: 24, fontWeight: 600, color: C.ink }}>
+          <h2 id="local-data-heading" className="font-display text-[24px] font-semibold text-ink">
             Your local data
           </h2>
-          <p className="mt-1 text-sm leading-relaxed" style={{ color: C.inkSoft, fontFamily: BODY }}>
+          <p className="mt-1 text-sm leading-relaxed text-ink-soft font-body">
             Export a portable copy of your goals and slate, or restore one after checking its contents. Credentials are never part of a Slate backup.
           </p>
           <div className="mt-4 flex flex-wrap gap-3">
             <Btn onClick={onExport}>Export backup</Btn>
             <label
-              className="inline-flex cursor-pointer items-center border px-6 py-3 text-xs font-semibold uppercase tracking-wider"
               htmlFor="restore-file"
-              style={{ borderColor: C.ink, color: C.ink, fontFamily: BODY }}
+              className="inline-flex cursor-pointer items-center border border-ink px-6 py-3 text-xs font-semibold uppercase tracking-wider text-ink font-body"
             >
               Restore backup
               <input
@@ -336,23 +328,22 @@ export function SettingsView({
           {restoreError && (
             <p
               ref={restoreErrorRef}
-              className="mt-4 text-sm"
+              className="mt-4 text-sm text-danger font-body"
               role="alert"
               tabIndex={-1}
-              style={{ color: C.danger, fontFamily: BODY }}
             >
               Backup could not be restored: {restoreError}
             </p>
           )}
           {restorePreview && (
-            <div className="mt-4 border p-4" style={{ borderColor: C.ink, background: C.card }}>
-              <p className="text-[10px] font-bold uppercase tracking-[0.22em]" style={{ color: C.inkSoft, fontFamily: MONO }}>
+            <div className="mt-4 border border-ink bg-card p-4">
+              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-ink-soft font-mono">
                 READY TO REPLACE
               </p>
-              <p className="mt-2 text-sm" style={{ color: C.ink, fontFamily: BODY }}>
+              <p className="mt-2 text-sm text-ink font-body">
                 This backup contains {restorePreview.goalCount} goal{restorePreview.goalCount === 1 ? "" : "s"}, {restorePreview.videoCount} video{restorePreview.videoCount === 1 ? "" : "s"}, and {restorePreview.historyCount} history entr{restorePreview.historyCount === 1 ? "y" : "ies"}.
               </p>
-              <p className="mt-1 text-xs" style={{ color: C.inkSoft, fontFamily: BODY }}>
+              <p className="mt-1 text-xs text-ink-soft font-body">
                 Confirming replaces the current Slate data in this browser.
               </p>
               <div className="mt-4 flex flex-wrap gap-3">
@@ -369,8 +360,7 @@ export function SettingsView({
           <button
             type="button"
             onClick={resetAll}
-            className="text-xs hover:opacity-70"
-            style={{ color: C.danger, fontFamily: BODY }}
+            className="text-xs text-danger hover:opacity-70 font-body"
           >
             Reset all local data
           </button>

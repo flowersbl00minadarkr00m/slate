@@ -20,22 +20,8 @@ export const C = {
   danger: "var(--color-danger)",
 };
 
-export const DISPLAY = "var(--font-display)";
 export const BODY = "var(--font-body)";
-export const MONO = "var(--font-mono)";
 
 export const DEMO_MODE =
   import.meta.env.VITE_PUBLIC_DEMO === "true" ||
   new URLSearchParams(window.location.search).get("demo") === "1";
-
-export const inputStyle = {
-  width: "100%",
-  padding: "14px 14px",
-  borderRadius: 0,
-  border: `1px solid ${C.ink}`,
-  background: "var(--color-field)",
-  color: C.ink,
-  fontFamily: BODY,
-  fontSize: 15,
-  outline: "none",
-};

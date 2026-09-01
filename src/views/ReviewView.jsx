@@ -1,4 +1,3 @@
-import { C, DISPLAY, BODY, MONO } from "../theme.js";
 import { fmtMins } from "../lib/format.js";
 import { getLocalISOWeek } from "../lib/date.js";
 
@@ -28,9 +27,9 @@ function dayStreak(history) {
 
 function Stat({ value, label }) {
   return (
-    <div style={{ background: C.card, border: `1px solid ${C.ink}`, padding: "20px 22px" }}>
-      <p style={{ fontFamily: DISPLAY, fontWeight: 900, fontSize: 44, lineHeight: 1, color: C.ink }}>{value}</p>
-      <p className="mt-2 text-[10px] font-bold uppercase tracking-[0.22em]" style={{ color: C.inkSoft, fontFamily: MONO }}>
+    <div className="border border-ink bg-card px-[22px] py-5">
+      <p className="font-display text-[44px] font-black leading-none text-ink">{value}</p>
+      <p className="mt-2 text-[10px] font-bold uppercase tracking-[0.22em] text-ink-soft font-mono">
         {label}
       </p>
     </div>
@@ -56,9 +55,9 @@ export function ReviewView({ history, goals }) {
 
   if (!history.length) {
     return (
-      <div className="rounded-lg p-12 text-center" style={{ background: C.card, border: `1px dashed ${C.mist}` }}>
-        <p style={{ fontFamily: DISPLAY, fontSize: 22, color: C.ink }}>Nothing watched yet.</p>
-        <p className="mt-2 text-sm" style={{ color: C.inkSoft, fontFamily: BODY }}>
+      <div className="rounded-lg border border-dashed border-mist bg-card p-12 text-center">
+        <p className="font-display text-[22px] text-ink">Nothing watched yet.</p>
+        <p className="mt-2 text-sm text-ink-soft font-body">
           Mark videos watched on your slate and this page tallies your week by goal.
         </p>
       </div>
@@ -69,12 +68,11 @@ export function ReviewView({ history, goals }) {
     <div className="space-y-10">
       <section>
         <h2
-          className="uppercase leading-none mb-6"
-          style={{ fontFamily: DISPLAY, fontSize: "clamp(40px, 7vw, 84px)", fontWeight: 900, letterSpacing: "-0.06em", color: C.ink }}
+          className="mb-6 font-display text-[clamp(40px,7vw,84px)] font-black uppercase leading-none tracking-[-0.06em] text-ink"
         >
           The week
         </h2>
-        <p className="-mt-4 mb-6 text-sm" style={{ color: C.inkSoft, fontFamily: MONO }}>
+        <p className="-mt-4 mb-6 text-sm text-ink-soft font-mono">
           {week.label}
         </p>
         <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
@@ -86,7 +84,7 @@ export function ReviewView({ history, goals }) {
       </section>
 
       <section>
-        <h3 className="mb-4" style={{ fontFamily: DISPLAY, fontSize: 24, fontWeight: 600, color: C.ink }}>
+        <h3 className="mb-4 font-display text-[24px] font-semibold text-ink">
           This week against budget
         </h3>
         <div className="space-y-4">
@@ -98,22 +96,22 @@ export function ReviewView({ history, goals }) {
             return (
               <div key={g.id}>
                 <div className="flex items-baseline justify-between mb-1.5">
-                  <h4 style={{ fontFamily: DISPLAY, fontSize: 18, fontWeight: 600, color: C.ink }}>{g.name}</h4>
-                  <span style={{ fontFamily: MONO, fontSize: 11, color: C.inkSoft }}>
+                  <h4 className="font-display text-[18px] font-semibold text-ink">{g.name}</h4>
+                  <span className="font-mono text-[11px] text-ink-soft">
                     {fmtMins(watched)} / {g.weeklyMinutes} min {met ? "· met ✓" : ""}
                   </span>
                 </div>
-                <div className="h-2.5 rounded-full overflow-hidden" style={{ background: C.mist }}>
+                <div className="h-2.5 overflow-hidden rounded-full bg-mist">
                   <div
-                    className="h-full rounded-full"
-                    style={{ width: `${pct}%`, background: met ? C.honeyDeep : C.honey }}
+                    className={`h-full rounded-full ${met ? "bg-honey-deep" : "bg-honey"}`}
+                    style={{ width: `${pct}%` }}
                   />
                 </div>
               </div>
             );
           })}
           {goals.length === 0 && (
-            <p className="text-sm" style={{ color: C.inkSoft, fontFamily: BODY }}>
+            <p className="text-sm text-ink-soft font-body">
               No active goals to measure against.
             </p>
           )}
@@ -121,21 +119,20 @@ export function ReviewView({ history, goals }) {
       </section>
 
       <section>
-        <h3 className="mb-4" style={{ fontFamily: DISPLAY, fontSize: 24, fontWeight: 600, color: C.ink }}>
+        <h3 className="mb-4 font-display text-[24px] font-semibold text-ink">
           Recently watched
         </h3>
-        <div style={{ border: `1px solid ${C.mist}` }}>
+        <div className="border border-mist">
           {[...history]
             .slice(-12)
             .reverse()
             .map((h, i) => (
               <div
                 key={`${h.id}-${i}`}
-                className="flex items-baseline justify-between gap-4 px-4 py-3"
-                style={{ borderBottom: i === Math.min(11, history.length - 1) ? "none" : `1px solid ${C.mist}` }}
+                className={`flex items-baseline justify-between gap-4 px-4 py-3 ${i === Math.min(11, history.length - 1) ? "" : "border-b border-mist"}`}
               >
-                <span style={{ fontFamily: BODY, fontSize: 14, color: C.ink }}>{h.title}</span>
-                <span style={{ fontFamily: MONO, fontSize: 11, color: C.inkSoft, whiteSpace: "nowrap" }}>
+                <span className="font-body text-[14px] text-ink">{h.title}</span>
+                <span className="whitespace-nowrap font-mono text-[11px] text-ink-soft">
                   {fmtMins(h.duration)} ·{" "}
                   {new Date(h.watchedAt).toLocaleDateString("en-CA", { month: "short", day: "numeric" })}
                 </span>

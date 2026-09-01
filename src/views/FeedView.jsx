@@ -1,4 +1,4 @@
-import { C, DISPLAY, BODY, MONO, DEMO_MODE } from "../theme.js";
+import { DEMO_MODE } from "../theme.js";
 import { fmtMins } from "../lib/format.js";
 import { Btn } from "../components/Btn.jsx";
 import { GoalMeter } from "../components/GoalMeter.jsx";
@@ -32,24 +32,24 @@ export function FeedView({
       <div className="flex items-center justify-between mb-6">
         <div>
           {DEMO_MODE && (
-            <p className="mb-1" style={{ fontFamily: MONO, fontSize: 10, color: C.honeyDeep }}>
+            <p className="mb-1 font-mono text-[10px] text-honey-deep">
               SEEDED DEMO · NO ACCOUNTS, CREDENTIALS OR API CALLS
             </p>
           )}
           {videos.length > 0 ? (
-            <p style={{ fontFamily: BODY, fontSize: 14, color: C.inkSoft }}>
+            <p className="font-body text-[14px] text-ink-soft">
               Today's slate:{" "}
-              <strong style={{ color: C.ink }}>
+              <strong className="text-ink">
                 {fresh.length} video{fresh.length !== 1 ? "s" : ""} · {fmtMins(totalSec)}
               </strong>{" "}
               remaining
               {done.length > 0 && ` · ${done.length} cleared`}
             </p>
           ) : (
-            <p style={{ fontFamily: BODY, fontSize: 14, color: C.inkSoft }}>No slate yet.</p>
+            <p className="font-body text-[14px] text-ink-soft">No slate yet.</p>
           )}
           {quotaUsed > 0 && (
-            <p style={{ fontFamily: MONO, fontSize: 10, color: C.inkSoft }} className="mt-0.5">
+            <p className="mt-0.5 font-mono text-[10px] text-ink-soft">
               ~{quotaUsed} / 10,000 daily API units used
               {cacheStats?.supabaseAvailable &&
                 ` · cache ${cacheStats.videoHits || 0} video hits / ${cacheStats.scoreHits || 0} score hits`}
@@ -63,7 +63,7 @@ export function FeedView({
             </Btn>
           )}
           {!DEMO_MODE && !gate.allowed && (
-            <p className="mt-1" style={{ fontFamily: MONO, fontSize: 10, color: C.honeyDeep }}>
+            <p className="mt-1 font-mono text-[10px] text-honey-deep">
               unlocks {gate.next?.toLocaleTimeString("en-CA", { hour: "2-digit", minute: "2-digit" })}
             </p>
           )}
@@ -72,11 +72,10 @@ export function FeedView({
 
       {loading && (
         <div
-          className="rounded-lg p-8 text-center"
-          style={{ background: C.card, border: `1px solid ${C.mist}` }}
+          className="rounded-lg border border-mist bg-card p-8 text-center"
         >
-          <p style={{ fontFamily: DISPLAY, fontSize: 18, color: C.ink }}>{loadStep}</p>
-          <p className="mt-2 text-xs" style={{ color: C.inkSoft, fontFamily: BODY }}>
+          <p className="font-display text-[18px] text-ink">{loadStep}</p>
+          <p className="mt-2 text-xs text-ink-soft font-body">
             The first run may take a bit; cached runs should get faster.
           </p>
         </div>
@@ -84,13 +83,7 @@ export function FeedView({
 
       {error && (
         <div
-          className="rounded-lg p-4 mb-6 text-sm"
-          style={{
-            background: "#FBEFEA",
-            border: `1px solid ${C.danger}`,
-            color: C.danger,
-            fontFamily: BODY,
-          }}
+          className="mb-6 rounded-lg border border-danger bg-[#fbefea] p-4 text-sm text-danger font-body"
         >
           {error}
         </div>
@@ -98,11 +91,10 @@ export function FeedView({
 
       {!loading && videos.length === 0 && !error && (
         <div
-          className="rounded-lg p-12 text-center"
-          style={{ background: C.card, border: `1px dashed ${C.mist}` }}
+          className="rounded-lg border border-dashed border-mist bg-card p-12 text-center"
         >
-          <p style={{ fontFamily: DISPLAY, fontSize: 22, color: C.ink }}>Nothing is scheduled.</p>
-          <p className="mt-2 text-sm" style={{ color: C.inkSoft, fontFamily: BODY }}>
+          <p className="font-display text-[22px] text-ink">Nothing is scheduled.</p>
+          <p className="mt-2 text-sm text-ink-soft font-body">
             Set your goals in Programming, then build your first slate.
           </p>
         </div>

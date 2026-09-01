@@ -1,4 +1,4 @@
-import { C, DISPLAY, BODY, MONO, DEMO_MODE } from "../theme.js";
+import { DEMO_MODE } from "../theme.js";
 import { fmtDur, fmtCount } from "../lib/format.js";
 import { Btn } from "./Btn.jsx";
 import { DemoCover } from "./DemoCover.jsx";
@@ -6,16 +6,10 @@ import { DemoCover } from "./DemoCover.jsx";
 export function VideoCard({ v, playing, setPlaying, mark, lead = false }) {
   return (
     <article
-      className="overflow-hidden"
-      style={{
-        background: C.card,
-        border: `1px solid ${C.ink}`,
-        opacity: v.status === "fresh" ? 1 : 0.45,
-        ...(lead ? { boxShadow: `10px 10px 0 ${C.ink}` } : {}),
-      }}
+      className={`overflow-hidden border border-ink bg-card ${v.status === "fresh" ? "" : "opacity-[0.45]"} ${lead ? "shadow-[10px_10px_0_var(--color-ink)]" : ""}`}
     >
       {playing === v.id && !DEMO_MODE ? (
-        <div className="relative" style={{ paddingBottom: "56.25%" }}>
+        <div className="relative aspect-video">
           <iframe
             className="absolute inset-0 w-full h-full"
             src={`https://www.youtube.com/embed/${v.id}?autoplay=1`}
@@ -28,8 +22,7 @@ export function VideoCard({ v, playing, setPlaying, mark, lead = false }) {
         <button type="button" className="block w-full relative group" onClick={() => setPlaying(v.id)}>
           <img src={v.thumb} alt="" className="w-full block grayscale group-hover:grayscale-0 transition-all" />
           <span
-            className="absolute bottom-2 right-2 px-2 py-1 text-[10px] font-bold"
-            style={{ background: C.honey, color: C.ink, fontFamily: MONO }}
+            className="absolute bottom-2 right-2 bg-honey px-2 py-1 text-[10px] font-bold text-ink font-mono"
           >
             {fmtDur(v.duration)}
           </span>
@@ -38,19 +31,18 @@ export function VideoCard({ v, playing, setPlaying, mark, lead = false }) {
         <DemoCover v={v} />
       )}
       <div className="p-5">
-        <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.24em]" style={{ color: C.inkSoft, fontFamily: MONO }}>
+        <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.24em] text-ink-soft font-mono">
           {lead ? "Lead story" : v.cache === "score" ? "Cached signal" : "Fresh signal"}
         </p>
         <h4
-          className="leading-[1.02]"
-          style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: lead ? "clamp(30px, 3vw, 42px)" : 28, color: C.ink, letterSpacing: "-0.04em" }}
+          className={`leading-[1.02] font-display font-extrabold tracking-[-0.04em] text-ink ${lead ? "text-[clamp(30px,3vw,42px)]" : "text-[28px]"}`}
         >
           {v.title}
         </h4>
-        <p className="mt-1 text-xs" style={{ color: C.inkSoft, fontFamily: BODY }}>
+        <p className="mt-1 text-xs text-ink-soft font-body">
           {v.channel}
         </p>
-        <p className="mt-2 text-xs italic" style={{ color: C.pineDeep, fontFamily: BODY }}>
+        <p className="mt-2 text-xs italic text-pine-deep font-body">
           {v.score}/100 — {v.why}
           {v.viewCount ? ` · ${fmtCount(v.viewCount)} views` : ""}
           {v.cache === "score" ? " · cached" : ""}
@@ -66,7 +58,7 @@ export function VideoCard({ v, playing, setPlaying, mark, lead = false }) {
           </div>
         )}
         {v.status !== "fresh" && (
-          <p className="mt-3 text-xs" style={{ fontFamily: MONO, color: C.inkSoft }}>
+          <p className="mt-3 text-xs text-ink-soft font-mono">
             {v.status === "watched" ? "✓ watched" : "— skipped"}
           </p>
         )}

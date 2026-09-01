@@ -1,4 +1,3 @@
-import { C, BODY, DISPLAY, MONO } from "../theme.js";
 import { Btn } from "./Btn.jsx";
 
 function statusMessage(status) {
@@ -16,18 +15,17 @@ export function StorageNotice({ status, onRetry, onExport }) {
   const writeFailed = status.code === "write-failed";
   return (
     <aside
-      className="mb-10 p-5"
+      className="mb-10 border border-danger bg-[#fbefea] p-5 text-danger"
       role={writeFailed ? "alert" : "status"}
       aria-live={writeFailed ? "assertive" : "polite"}
-      style={{ background: "#FBEFEA", border: `1px solid ${C.danger}`, color: C.danger }}
     >
-      <p className="text-[10px] font-bold uppercase tracking-[0.24em]" style={{ fontFamily: MONO }}>
+      <p className="text-[10px] font-bold uppercase tracking-[0.24em] font-mono">
         LOCAL DATA NEEDS ATTENTION
       </p>
-      <h2 className="mt-2" style={{ color: C.ink, fontFamily: DISPLAY, fontSize: 24, fontWeight: 700 }}>
+      <h2 className="mt-2 font-display text-[24px] font-bold text-ink">
         Persistence is unavailable.
       </h2>
-      <p className="mt-2 text-sm leading-relaxed" style={{ fontFamily: BODY }}>
+      <p className="mt-2 text-sm leading-relaxed font-body">
         {statusMessage(status)} {writeFailed || status.code === "clear-failed" ? "Your work is still available in this tab." : "Slate cannot save automatically until you choose a recovery action."}
       </p>
       <div className="mt-4 flex flex-wrap gap-3">
