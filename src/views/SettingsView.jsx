@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { C, DISPLAY, BODY, MONO, inputStyle } from "../theme.js";
 import { uid } from "../lib/format.js";
 import { Btn } from "../components/Btn.jsx";
@@ -11,20 +11,33 @@ export function SettingsView({
   setChannels,
   settings,
   setSettings,
+  firstGoalRef,
   activeGoals,
   loading,
   refresh,
   resetAll,
+  onExport,
+  onRestoreFile,
+  restorePreview,
+  restoreError,
+  onConfirmRestore,
+  onCancelRestore,
   readOnly = false,
 }) {
   const [channelInput, setChannelInput] = useState("");
+  const restoreErrorRef = useRef(null);
   const ro = readOnly;
 
+  useEffect(() => {
+    if (restoreError) restoreErrorRef.current?.focus();
+  }, [restoreError]);
+
   const addChannel = () => {
-    if (channelInput.trim()) {
-      setChannels((cs) => [...cs, channelInput.trim()]);
-      setChannelInput("");
-    }
+    const channel = channelInput.trim();
+    if (!channel) return;
+
+    setChannels((cs) => (cs.includes(channel) ? cs : [...cs, channel]));
+    setChannelInput("");
   };
 
   return (
@@ -56,7 +69,7 @@ export function SettingsView({
           </p>
         </div>
         <div className="mt-8 space-y-6">
-          {goals.map((g) => (
+          {goals.map((g, goalIndex) => (
             <div
               key={g.id}
               className="p-6 md:p-8"
@@ -70,9 +83,11 @@ export function SettingsView({
                   {g.weeklyMinutes} min / week
                 </span>
               </div>
-              <div className="grid gap-4" style={{ gridTemplateColumns: "1fr 1fr" }}>
+              <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
                 <Field label="Goal name">
                   <input
+                    id={goalIndex === 0 ? "first-goal" : undefined}
+                    ref={goalIndex === 0 ? firstGoalRef : undefined}
                     style={inputStyle}
                     value={g.name}
                     onChange={(e) =>
@@ -82,7 +97,7 @@ export function SettingsView({
                     }
                   />
                 </Field>
-                <div className="grid gap-4" style={{ gridTemplateColumns: "1fr 1fr" }}>
+                <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
                   <Field label="Ends">
                     <input
                       style={inputStyle}
@@ -110,7 +125,7 @@ export function SettingsView({
                   </Field>
                 </div>
               </div>
-              <div className="mt-4 grid gap-4" style={{ gridTemplateColumns: "1fr 1fr" }}>
+              <div className="mt-4 grid gap-4 grid-cols-1 md:grid-cols-2">
                 <Field label="What counts (used by the relevance scorer)">
                   <textarea
                     style={{ ...inputStyle, minHeight: 70, resize: "vertical" }}
@@ -188,16 +203,16 @@ export function SettingsView({
           </Btn>
         </div>
         <div className="mt-3 flex flex-wrap gap-2">
-          {channels.map((ch, i) => (
+          {channels.map((ch) => (
             <span
-              key={i}
+              key={ch}
               className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs"
               style={{ background: C.mist, color: C.ink, fontFamily: MONO }}
             >
               {ch}
               <button
                 type="button"
-                onClick={() => setChannels((cs) => cs.filter((_, j) => j !== i))}
+                onClick={() => setChannels((cs) => cs.filter((candidate) => candidate !== ch))}
                 style={{ color: C.inkSoft }}
                 className="hover:opacity-70"
               >
@@ -210,7 +225,7 @@ export function SettingsView({
 
       <section>
         <h2 style={{ fontFamily: DISPLAY, fontSize: 24, fontWeight: 600, color: C.ink }}>The rules</h2>
-        <div className="mt-4 grid gap-4 max-w-3xl" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
+        <div className="mt-4 grid gap-4 max-w-3xl grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
           <Field label="Min length (min)">
             <input
               style={inputStyle}
@@ -292,6 +307,62 @@ export function SettingsView({
           {loading ? "Programming..." : "Build first slate"}
         </Btn>
       </section>
+
+      {!ro && (
+        <section aria-labelledby="local-data-heading" className="max-w-3xl">
+          <h2 id="local-data-heading" style={{ fontFamily: DISPLAY, fontSize: 24, fontWeight: 600, color: C.ink }}>
+            Your local data
+          </h2>
+          <p className="mt-1 text-sm leading-relaxed" style={{ color: C.inkSoft, fontFamily: BODY }}>
+            Export a portable copy of your goals and slate, or restore one after checking its contents. Credentials are never part of a Slate backup.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <Btn onClick={onExport}>Export backup</Btn>
+            <label
+              className="inline-flex cursor-pointer items-center border px-6 py-3 text-xs font-semibold uppercase tracking-wider"
+              htmlFor="restore-file"
+              style={{ borderColor: C.ink, color: C.ink, fontFamily: BODY }}
+            >
+              Restore backup
+              <input
+                id="restore-file"
+                className="sr-only"
+                type="file"
+                accept="application/json,.json"
+                onChange={onRestoreFile}
+              />
+            </label>
+          </div>
+          {restoreError && (
+            <p
+              ref={restoreErrorRef}
+              className="mt-4 text-sm"
+              role="alert"
+              tabIndex={-1}
+              style={{ color: C.danger, fontFamily: BODY }}
+            >
+              Backup could not be restored: {restoreError}
+            </p>
+          )}
+          {restorePreview && (
+            <div className="mt-4 border p-4" style={{ borderColor: C.ink, background: C.card }}>
+              <p className="text-[10px] font-bold uppercase tracking-[0.22em]" style={{ color: C.inkSoft, fontFamily: MONO }}>
+                READY TO REPLACE
+              </p>
+              <p className="mt-2 text-sm" style={{ color: C.ink, fontFamily: BODY }}>
+                This backup contains {restorePreview.goalCount} goal{restorePreview.goalCount === 1 ? "" : "s"}, {restorePreview.videoCount} video{restorePreview.videoCount === 1 ? "" : "s"}, and {restorePreview.historyCount} history entr{restorePreview.historyCount === 1 ? "y" : "ies"}.
+              </p>
+              <p className="mt-1 text-xs" style={{ color: C.inkSoft, fontFamily: BODY }}>
+                Confirming replaces the current Slate data in this browser.
+              </p>
+              <div className="mt-4 flex flex-wrap gap-3">
+                <Btn onClick={onConfirmRestore}>Replace local data</Btn>
+                <Btn kind="ghost" onClick={onCancelRestore}>Cancel</Btn>
+              </div>
+            </div>
+          )}
+        </section>
+      )}
 
       {!ro && (
         <p className="text-right">

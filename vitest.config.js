@@ -11,7 +11,7 @@ export default mergeConfig(
           url: "http://localhost",
         },
       },
-      include: ["tests/**/*.test.js"],
+      include: ["tests/**/*.test.js", "tests/**/*.test.jsx"],
     },
   })
 );
