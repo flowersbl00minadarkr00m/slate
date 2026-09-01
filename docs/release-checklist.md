@@ -19,11 +19,12 @@ from deployment evidence that requires the separately authorized T5 operation.
 - [x] `SECURITY.md` documents private reporting, server-only credentials, and
   the distinction between source controls and deployment controls.
 - [x] README and contribution instructions describe the canonical root and the
-  Vercel-primary deployment path without a CI badge.
-- [ ] Canonical Git publication and a workflow run against that history —
-  **PENDING canonical publication**.
-- [ ] README CI badge — **PENDING canonical publication and a verified workflow
-  target**. Do not point at unrelated history.
+  Vercel-primary deployment path; the CI badge targets only verified
+  `canonical-v2` history.
+- [x] Canonical Git history is published non-destructively on `canonical-v2`
+  at `e896edf`; its push-triggered root CI run passed every required job.
+- [x] README CI badge targets the verified `canonical-v2` workflow history and
+  does not point at unrelated public `main` history.
 
 ## Resource and CSP contract — source review
 
@@ -47,15 +48,17 @@ from deployment evidence that requires the separately authorized T5 operation.
 
 ## Source verification record
 
-- [ ] Canonical CI run for this source — **PENDING canonical publication**.
-- [ ] Release-owner reconciliation of fresh `npm ci`, lint, test, build, audit,
-  workflow semantics, JSON/config validation, and secret scan — **recorded in
-  the worker execution evidence; orchestrator review remains required**.
+- [x] Canonical CI run for this source passed on `canonical-v2` at `e896edf`.
+- [x] Release-owner reconciliation covers fresh `npm ci`, lint, 54/54 tests,
+  build, production audit, workflow semantics, JSON/config validation, and
+  tracked-source credential scanning; independent R1/R2 review approved the
+  redacted release evidence before publication.
 
 ## Deployment and WAF evidence — T5 only
 
-Every item in this section is intentionally pending. The local Vercel linkage
-is usable only for non-mutating checks and does not prove deployed state.
+This section remains incomplete even though bounded deployment evidence now
+exists. Checked items below are supported by the authenticated retry-4 checks;
+unchecked WAF and full-browser items still block the final release verdict.
 
 Observed retry 4 evidence (partial; not a release verdict):
 
@@ -66,11 +69,14 @@ Observed retry 4 evidence (partial; not a release verdict):
 - Authenticated ordinary and demo HTML shells contained the Slate root, title, and production asset markers. Full browser rendering was blocked by deployment-protection SSO.
 - No Firewall rule or draft was created. WAF and legitimate generation verification remain pending because the configured cache path would perform Supabase schema/cache/run writes outside this retry authorization.
 
-- [ ] Canonical deployment URL and commit — **PENDING T5**.
-- [ ] `GET /api/health` bounded response and no-paid-work check — **PENDING T5**.
-- [ ] Representative deployed `Content-Security-Policy`, HSTS, referrer,
-  permissions, nosniff, frame, opener, and resource-policy headers — **PENDING
-  T5**.
+- [x] Canonical production deployment reached READY at source commit
+  `3c8be4328b5f3915b88249506e041c8e89eb46e8`; the public checklist intentionally
+  omits the operator-specific hostname.
+- [x] Authenticated `GET /api/health` returned bounded HTTP 200 ready state
+  without paid/provider work.
+- [x] Representative deployed `Content-Security-Policy`, HSTS, referrer,
+  permissions, nosniff, frame, opener, and resource-policy headers matched the
+  checked-in contract.
 - [ ] Core ordinary UI renders under the deployed CSP, including a
   representative YouTube thumbnail and playback/embed path — **PENDING T5**.
 - [ ] WAF rule observed in log/observe mode for `/api/build-slate` — **PENDING
@@ -85,6 +91,7 @@ Observed retry 4 evidence (partial; not a release verdict):
 
 ## Release verdict
 
-**Not release-ready from this checklist alone.** T4 source controls require
-fresh verification and orchestrator reconciliation; deployed health, headers,
-UI, and WAF evidence remain explicit T5 blockers.
+**Not release-ready from this checklist alone.** Canonical Git/CI publication,
+deployed health, and representative headers are verified. Full protected-browser
+UI rendering plus observe/enforce/recovery/rollback WAF evidence remain explicit
+T5 blockers.

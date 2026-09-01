@@ -2,12 +2,12 @@
 
 A YouTube front end that shows you a finite, goal-aligned set of videos each day, and then ends.
 
-The canonical release surface is this flat repository root. It remains separate
-from unrelated public history until canonical publication is available. A CI
-badge is intentionally absent until that publication and a verified workflow
-target exist.
+The canonical release surface is this flat repository root, published on the
+`canonical-v2` branch so the older unrelated public `main` history remains
+intact.
 
-![MIT license](https://img.shields.io/badge/license-MIT-black) 
+[![CI](https://github.com/flowersbl00minadarkr00m/slate/actions/workflows/ci.yml/badge.svg?branch=canonical-v2)](https://github.com/flowersbl00minadarkr00m/slate/actions/workflows/ci.yml?query=branch%3Acanonical-v2)
+![MIT license](https://img.shields.io/badge/license-MIT-black)
 
 ![Slate demo edition — a programmed, finite feed](docs/hero.png)
 
