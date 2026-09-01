@@ -1,6 +1,6 @@
-import { useState } from "react";
 import { C, DISPLAY, BODY, MONO } from "../theme.js";
 import { fmtMins } from "../lib/format.js";
+import { getLocalISOWeek } from "../lib/date.js";
 
 /* Review view (spec T5): what the broadcast day added up to. Reads the
    persisted watch history — no new state, no external calls. */
@@ -37,10 +37,13 @@ function Stat({ value, label }) {
   );
 }
 
-export function ReviewView({ history, goals }) {
-  const [now] = useState(() => Date.now());
-  const weekAgo = now - 7 * 86400000;
-  const thisWeek = history.filter((h) => new Date(h.watchedAt).getTime() >= weekAgo);
+export function ReviewView({ history, goals, now = new Date() }) {
+  const week = getLocalISOWeek(now);
+  const thisWeek = history.filter((h) => {
+    const watchedAt = new Date(h.watchedAt);
+    const watchedTime = watchedAt.getTime();
+    return Number.isFinite(watchedTime) && watchedTime >= week.start.getTime() && watchedTime < week.end.getTime();
+  });
 
   const minutesByGoalWeek = new Map();
   for (const h of thisWeek) {
@@ -71,6 +74,9 @@ export function ReviewView({ history, goals }) {
         >
           The week
         </h2>
+        <p className="-mt-4 mb-6 text-sm" style={{ color: C.inkSoft, fontFamily: MONO }}>
+          {week.label}
+        </p>
         <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
           <Stat value={fmtMins(weekSec)} label="Watched this week" />
           <Stat value={thisWeek.length} label="Videos this week" />
