@@ -1,0 +1,78 @@
+# Slate release checklist
+
+This checklist applies to the flat canonical root that is intended for public
+release. It distinguishes source controls that can be reviewed in this tree
+from deployment evidence that requires the separately authorized T5 operation.
+
+## Source controls — T4
+
+- [x] The Vite frontend and `api/` serverless boundary are rooted at this
+  repository root; no nested application path is part of the release surface.
+- [x] There is one root `.github/workflows/ci.yml` workflow with locked npm
+  install, lint, full Vitest run, production build, production-only high-level
+  audit, and bounded tracked-source credential scanning.
+- [x] The workflow has read-only contents permission, a concurrency group,
+  bounded job timeout, and immutable action revisions with version comments.
+- [x] Dependabot monitors root npm and GitHub Actions dependencies weekly.
+- [x] `vercel.json` provides the root SPA fallback and source-level security
+  headers for the actual resource inventory.
+- [x] `SECURITY.md` documents private reporting, server-only credentials, and
+  the distinction between source controls and deployment controls.
+- [x] README and contribution instructions describe the canonical root and the
+  Vercel-primary deployment path without a CI badge.
+- [ ] Canonical Git publication and a workflow run against that history —
+  **PENDING canonical publication**.
+- [ ] README CI badge — **PENDING canonical publication and a verified workflow
+  target**. Do not point at unrelated history.
+
+## Resource and CSP contract — source review
+
+- [x] Browser scripts, styles, fonts, and API connections are same-origin.
+- [x] YouTube playback is framed only from `https://www.youtube.com`.
+- [x] Runtime YouTube thumbnails are allowed from the YouTube image CDN via
+  `https://*.ytimg.com`; no broad image wildcard is used.
+- [x] No runtime Google Font request is part of the shipped demo path, and the
+  favicon is local.
+- [x] `style-src` and `style-src-elem` remain `'self'`.
+- [x] `style-src-attr 'unsafe-inline'` is the exact limited exception required
+  by the three remaining runtime-computed progress-width attributes in
+  `GoalMeter.jsx` and `ReviewView.jsx`. This is **not** a strict style CSP
+  claim; removing the exception requires an application change outside T4 or
+  an explicitly approved disposition.
+- [ ] Deployed CSP plus core ordinary/demo UI and YouTube thumbnail/embed
+  behavior — **PENDING T5 deployed verification**.
+
+## Source verification record
+
+- [ ] Canonical CI run for this source — **PENDING canonical publication**.
+- [ ] Release-owner reconciliation of fresh `npm ci`, lint, test, build, audit,
+  workflow semantics, JSON/config validation, and secret scan — **recorded in
+  the worker execution evidence; orchestrator review remains required**.
+
+## Deployment and WAF evidence — T5 only
+
+Every item in this section is intentionally pending. The local Vercel linkage
+is usable only for non-mutating checks and does not prove deployed state.
+
+- [ ] Canonical deployment URL and commit — **PENDING T5**.
+- [ ] `GET /api/health` bounded response and no-paid-work check — **PENDING T5**.
+- [ ] Representative deployed `Content-Security-Policy`, HSTS, referrer,
+  permissions, nosniff, frame, opener, and resource-policy headers — **PENDING
+  T5**.
+- [ ] Core ordinary UI renders under the deployed CSP, including a
+  representative YouTube thumbnail and playback/embed path — **PENDING T5**.
+- [ ] WAF rule observed in log/observe mode for `/api/build-slate` — **PENDING
+  T5**.
+- [ ] WAF rule matches the approved source key, initial 10 requests per
+  10-minute window, and intended observe-then-block action — **PENDING T5**.
+- [ ] Normal generation traffic remains functional after enforcement —
+  **PENDING T5**.
+- [ ] Bounded excessive-request rejection, `Retry-After` where applicable, and
+  recovery are observed across the deployment — **PENDING T5**.
+- [ ] Rollback is verified as disabling only the Slate WAF rule — **PENDING T5**.
+
+## Release verdict
+
+**Not release-ready from this checklist alone.** T4 source controls require
+fresh verification and orchestrator reconciliation; deployed health, headers,
+UI, and WAF evidence remain explicit T5 blockers.

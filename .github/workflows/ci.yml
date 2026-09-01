@@ -4,12 +4,23 @@ on:
   push:
   pull_request:
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
 jobs:
   verify:
+    name: Root verification
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: .
     steps:
       - name: Check out repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -27,7 +38,49 @@ jobs:
         run: npm run lint
 
       - name: Run tests
-        run: npm test
+        run: npm test -- --run
 
       - name: Build production bundle
         run: npm run build
+
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Scan tracked source for credential-shaped literals
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import { execFileSync } from "node:child_process";
+          import { readFileSync } from "node:fs";
+
+          // git ls-files excludes ignored node_modules and dist artifacts by construction.
+          const files = execFileSync("git", ["ls-files", "-z"], { encoding: "utf8" })
+            .split("\0")
+            .filter(Boolean);
+          const excluded = new Set([
+            ".env.example",
+            ".github/workflows/ci.yml",
+            "package-lock.json",
+          ]);
+          const credentialPattern = /(?:sk-[A-Za-z0-9_-]{20,}|AIza[A-Za-z0-9_-]{20,}|(?:ghp|gho|ghu|ghs|ghr|github_pat)_[A-Za-z0-9_-]{20,}|xox[baprs]-[A-Za-z0-9-]{20,}|AKIA[0-9A-Z]{16}|postgres(?:ql)?:\/\/[^\s"'`]{12,}|Bearer\s+[A-Za-z0-9._-]{20,})/i;
+          const findings = [];
+
+          for (const file of files) {
+            if (excluded.has(file)) continue;
+            const lines = readFileSync(file, "utf8").split(/\r?\n/);
+            lines.forEach((line, index) => {
+              if (credentialPattern.test(line)) {
+                findings.push(`${file}:${index + 1}`);
+              }
+            });
+          }
+
+          if (findings.length > 0) {
+            console.error("Credential-shaped assignment or literal found at:");
+            findings.forEach((finding) => console.error(finding));
+            process.exitCode = 1;
+          } else {
+            console.log("No meaningful credential-shaped assignments or literals found in tracked source/config.");
+          }
+          NODE

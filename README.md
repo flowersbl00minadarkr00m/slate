@@ -2,6 +2,11 @@
 
 A YouTube front end that shows you a finite, goal-aligned set of videos each day, and then ends.
 
+The canonical release surface is this flat repository root. It remains separate
+from unrelated public history until canonical publication is available. A CI
+badge is intentionally absent until that publication and a verified workflow
+target exist.
+
 ![MIT license](https://img.shields.io/badge/license-MIT-black) 
 
 ![Slate demo edition — a programmed, finite feed](docs/hero.png)
@@ -28,6 +33,11 @@ The slate builder runs server-side, in `api/build-slate.js`. This matters for tw
 
 Supabase is used as a backend cache and lightweight run log. It can store video metadata, scored goal/video matches, and generated slate runs so later requests can avoid re-fetching and re-scoring known videos.
 
+Vercel is the authoritative production target for the root Vite frontend and
+`api/` serverless function. Netlify portability is retained where the same
+frontend/function shape works, but this release's deployment evidence is
+Vercel-primary.
+
 To apply the cache schema manually, set `POSTGRES_URL_NON_POOLING` or `POSTGRES_URL` in `.env.local`, then run:
 
 ```bash
@@ -39,7 +49,7 @@ npm run db:apply
 You will need Node 18 or newer.
 
 ```bash
-npm install
+npm ci
 ```
 
 Create a `.env.local` file from the example and add your server-side keys:
@@ -49,7 +59,9 @@ cp .env.example .env.local
 # then edit .env.local and paste your keys
 ```
 
-The serverless builder lives under `api/`, which plain Vite does not run on its own. The simplest way to run both the app and the function locally is the Vercel CLI:
+The root serverless builder lives under `api/`, which plain Vite does not run
+on its own. The simplest way to run both the root app and the function locally
+is the Vercel CLI:
 
 ```bash
 npm i -g vercel
@@ -60,12 +72,27 @@ If you only want to work on the interface and are not testing scoring, `npm run 
 
 ## Deploying to Vercel
 
-1. Push this repo to GitHub.
-2. In Vercel, import the repo. It will detect Vite and use the right build settings on its own.
-3. Under Settings, Environment Variables, add `OPENAI_API_KEY` and `YOUTUBE_API_KEY`. Optionally add `SLATE_MODEL` to override the default. If using Supabase caching, also add `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and the Vercel/Supabase Postgres connection string.
-4. Deploy.
+Vercel is the primary production path for this root. After canonical source
+publication, connect that published root to a Vercel project and use the
+checked-in `vercel.json` routing and headers. This source-only T4 change does
+not claim a deployed URL or configured WAF; those checks belong to the
+separately authorized T5 operation.
 
-That gives you a live URL you can share. Because editions only unlock at set times, the refresh lock becomes genuinely binding once the app is deployed and running across sessions.
+Configure these values in server-only deployment environment variables before
+enabling generation:
+
+- Required for generation: `OPENAI_API_KEY`, `YOUTUBE_API_KEY`, and
+  `SLATE_API_ENABLED=1`.
+- Optional cache: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and
+  `POSTGRES_URL_NON_POOLING` or `POSTGRES_URL`.
+- Optional behavior: `SLATE_MODEL` and `SLATE_ALLOWED_ORIGINS`.
+
+`GET /api/health` is a bounded configuration/readiness check; it does not call
+OpenAI, YouTube, or Postgres.
+
+Once an authorized deployment is created, its URL can be used for a release
+smoke check. Because editions only unlock at set times, the refresh lock is
+most meaningful when the app is deployed and running across sessions.
 
 ## Safe public demo
 
@@ -77,15 +104,25 @@ https://your-deployment.vercel.app/?demo=1
 
 This mode is intended for screenshots and public product tours. The normal route remains the functioning self-hosted app and requires each deployer to configure their own server-side environment variables.
 
-For a public demo-only Vercel deployment, set `VITE_PUBLIC_DEMO=true` and do **not** set `OPENAI_API_KEY`. The demo will then open on every route, and the scoring function cannot make model calls. Keep the default build configuration for a functioning self-hosted instance.
+For a demo-only deployment, leave generation disabled and open the explicit
+`?demo=1` route. This route is read-only, uses bundled seed data, makes no API
+or storage calls, and does not make demo mode global across every route. Keep
+the normal route's server-only environment configuration for a functioning
+self-hosted instance.
 
 ## A few honest notes
 
-This is a prototype, and it behaves like one in a couple of places.
+This remains a small self-hosted product, and it behaves like one in a couple
+of places.
 
 Goals, channels, rules, the current slate, watch history, and the edition lock persist locally in your browser (localStorage, versioned key `slate.v1`; "Reset all local data" lives in Programming). There are still no accounts: Supabase caches shared video/scoring/run data, not personal settings.
 
 The normal app does not have accounts, but it still processes data: goal text and video metadata pass through the serverless builder to YouTube, OpenAI, and Supabase. The seeded demo route avoids that processing entirely.
+
+The generation endpoint is deliberately opt-in. The local in-process limiter
+is only a defense-in-depth backstop; deployment-wide throttling and deployed
+header evidence must be verified separately. See the [release
+checklist](docs/release-checklist.md).
 
 The YouTube Data API gives you 10,000 quota units a day, and search calls cost 100 each. Slate is deliberately frugal here, two queries per goal plus cheap channel pulls, which keeps a normal day well under the limit. The usage estimate in the corner of the feed helps you keep an eye on it.
 
