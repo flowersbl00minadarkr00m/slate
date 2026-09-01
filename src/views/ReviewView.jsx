@@ -37,8 +37,8 @@ function Stat({ value, label }) {
   );
 }
 
-export function ReviewView({ history, goals, now = new Date() }) {
-  const week = getLocalISOWeek(now);
+export function ReviewView({ history, goals }) {
+  const week = getLocalISOWeek(new Date());
   const thisWeek = history.filter((h) => {
     const watchedAt = new Date(h.watchedAt);
     const watchedTime = watchedAt.getTime();

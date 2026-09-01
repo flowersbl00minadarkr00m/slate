@@ -68,7 +68,7 @@ afterEach(async () => {
 
 describe("Review ISO week aggregation", () => {
   it("renders the local range, weekly totals, video count, and goal budgets together", async () => {
-    await act(async () => root.render(<ReviewView history={history} goals={goals} now={now} />));
+    await act(async () => root.render(<ReviewView history={history} goals={goals} />));
 
     const text = document.body.textContent;
     expect(text).toContain("2026-W36");
@@ -82,7 +82,7 @@ describe("Review ISO week aggregation", () => {
   });
 
   it("ignores invalid timestamps for weekly totals while retaining history and all-time totals", async () => {
-    await act(async () => root.render(<ReviewView history={history} goals={goals} now={now} />));
+    await act(async () => root.render(<ReviewView history={history} goals={goals} />));
 
     const text = document.body.textContent;
     expect(text).toContain("Watched all time");
@@ -90,4 +90,5 @@ describe("Review ISO week aggregation", () => {
     expect(text).toContain("Invalid timestamp stays exportable");
     expect(text).not.toContain("Invalid timestamp stays exportable\n30 min");
   });
+
 });
