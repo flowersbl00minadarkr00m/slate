@@ -1,4 +1,5 @@
 import { fmtMins, todayAt } from "../lib/format.js";
+import { formatTime } from "../lib/locale.js";
 
 export function SignOff({ watchedSec, gate, settings }) {
   return (
@@ -14,7 +15,7 @@ export function SignOff({ watchedSec, gate, settings }) {
         next edition airs at{" "}
         <span className="font-mono">
           {gate.next
-            ? gate.next.toLocaleTimeString("en-CA", { hour: "2-digit", minute: "2-digit" })
+            ? formatTime(gate.next, { hour: "2-digit", minute: "2-digit" })
             : settings.refreshTimes.find((t) => todayAt(t) > new Date()) || settings.refreshTimes[0]}
         </span>
         .

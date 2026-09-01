@@ -1,11 +1,12 @@
 import { C, BODY } from "../theme.js";
 
-export function Btn({ children, onClick, kind = "solid", small, disabled }) {
+export function Btn({ children, onClick, kind = "solid", small, disabled, ariaLabel }) {
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={disabled}
+      aria-label={ariaLabel}
       className={`font-semibold uppercase tracking-wider transition-opacity ${small ? "px-4 py-2 text-[10px]" : "px-6 py-3 text-xs"} ${disabled ? "opacity-40 cursor-not-allowed" : "hover:opacity-85"}`}
       style={
         kind === "solid"

@@ -1,3 +1,5 @@
+import { formatDate } from "./locale.js";
+
 function validDate(value) {
   const date = value instanceof Date ? new Date(value.getTime()) : new Date(value);
   return Number.isNaN(date.getTime()) ? null : date;
@@ -34,7 +36,7 @@ function formatDateRange(start, end) {
   const lastDay = new Date(end.getTime());
   lastDay.setDate(lastDay.getDate() - 1);
   const options = { month: "short", day: "numeric", year: "numeric" };
-  return `${start.toLocaleDateString("en-CA", options)}–${lastDay.toLocaleDateString("en-CA", options)}`;
+  return `${formatDate(start, options)}–${formatDate(lastDay, options)}`;
 }
 
 export function getLocalISOWeek(value = new Date()) {

@@ -3,7 +3,7 @@ import { uid } from "../lib/format.js";
 import { Btn } from "../components/Btn.jsx";
 import { Field } from "../components/Field.jsx";
 
-const inputClass = "w-full rounded-none border border-ink bg-field px-3.5 py-3.5 text-[15px] text-ink outline-none font-body";
+const inputClass = "w-full rounded-none border border-ink bg-field px-3.5 py-3.5 text-[15px] text-ink font-body";
 const textareaClass = `${inputClass} min-h-[70px] resize-y`;
 
 export function SettingsView({

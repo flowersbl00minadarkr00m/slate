@@ -1,4 +1,5 @@
 import { DEMO_MODE } from "../theme.js";
+import { formatDate } from "../lib/locale.js";
 import { Btn } from "./Btn.jsx";
 
 /* Compressed single-band masthead (spec T7): wordmark + tagline + nav in
@@ -34,7 +35,7 @@ export function Masthead({ view, setView }) {
         </div>
         <div className="flex flex-col items-end gap-2 pb-1.5">
           <p className="text-xs uppercase tracking-[0.18em] text-ink-soft font-mono">
-            {new Date().toLocaleDateString("en-CA", {
+            {formatDate(new Date(), {
               weekday: "long",
               month: "long",
               day: "numeric",

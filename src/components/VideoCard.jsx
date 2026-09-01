@@ -3,9 +3,15 @@ import { fmtDur, fmtCount } from "../lib/format.js";
 import { Btn } from "./Btn.jsx";
 import { DemoCover } from "./DemoCover.jsx";
 
-export function VideoCard({ v, playing, setPlaying, mark, lead = false }) {
+export function VideoCard({ v, playing, setPlaying, mark, lead = false, cardRef }) {
+  const titleId = `video-card-${v.id}-title`;
+
   return (
     <article
+      ref={cardRef}
+      data-video-card="true"
+      tabIndex={-1}
+      aria-labelledby={titleId}
       className={`overflow-hidden border border-ink bg-card ${v.status === "fresh" ? "" : "opacity-[0.45]"} ${lead ? "shadow-[10px_10px_0_var(--color-ink)]" : ""}`}
     >
       {playing === v.id && !DEMO_MODE ? (
@@ -19,7 +25,12 @@ export function VideoCard({ v, playing, setPlaying, mark, lead = false }) {
           />
         </div>
       ) : v.thumb ? (
-        <button type="button" className="block w-full relative group" onClick={() => setPlaying(v.id)}>
+        <button
+          type="button"
+          className="block w-full relative group"
+          onClick={() => setPlaying(v.id)}
+          aria-label={`Watch ${v.title}`}
+        >
           <img src={v.thumb} alt="" className="w-full block grayscale group-hover:grayscale-0 transition-all" />
           <span
             className="absolute bottom-2 right-2 bg-honey px-2 py-1 text-[10px] font-bold text-ink font-mono"
@@ -35,6 +46,7 @@ export function VideoCard({ v, playing, setPlaying, mark, lead = false }) {
           {lead ? "Lead story" : v.cache === "score" ? "Cached signal" : "Fresh signal"}
         </p>
         <h4
+          id={titleId}
           className={`leading-[1.02] font-display font-extrabold tracking-[-0.04em] text-ink ${lead ? "text-[clamp(30px,3vw,42px)]" : "text-[28px]"}`}
         >
           {v.title}
@@ -49,10 +61,19 @@ export function VideoCard({ v, playing, setPlaying, mark, lead = false }) {
         </p>
         {v.status === "fresh" && !DEMO_MODE && (
           <div className="mt-3 flex gap-2">
-            <Btn small onClick={() => (playing === v.id ? mark(v.id, "watched") : setPlaying(v.id))}>
+            <Btn
+              small
+              ariaLabel={`${playing === v.id ? "Mark watched" : "Watch"} ${v.title}`}
+              onClick={() => (playing === v.id ? mark(v.id, "watched") : setPlaying(v.id))}
+            >
               {playing === v.id ? "Mark watched" : "Watch"}
             </Btn>
-            <Btn small kind="ghost" onClick={() => mark(v.id, "skipped")}>
+            <Btn
+              small
+              kind="ghost"
+              ariaLabel={`Skip ${v.title}`}
+              onClick={() => mark(v.id, "skipped")}
+            >
               Skip
             </Btn>
           </div>

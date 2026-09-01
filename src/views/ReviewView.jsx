@@ -1,5 +1,6 @@
 import { fmtMins } from "../lib/format.js";
 import { getLocalISOWeek } from "../lib/date.js";
+import { formatDate } from "../lib/locale.js";
 
 /* Review view (spec T5): what the broadcast day added up to. Reads the
    persisted watch history — no new state, no external calls. */
@@ -134,7 +135,7 @@ export function ReviewView({ history, goals }) {
                 <span className="font-body text-[14px] text-ink">{h.title}</span>
                 <span className="whitespace-nowrap font-mono text-[11px] text-ink-soft">
                   {fmtMins(h.duration)} ·{" "}
-                  {new Date(h.watchedAt).toLocaleDateString("en-CA", { month: "short", day: "numeric" })}
+                  {formatDate(new Date(h.watchedAt), { month: "short", day: "numeric" })}
                 </span>
               </div>
             ))}

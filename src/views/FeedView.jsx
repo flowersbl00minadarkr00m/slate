@@ -1,5 +1,8 @@
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { DEMO_MODE } from "../theme.js";
 import { fmtMins } from "../lib/format.js";
+import { formatTime } from "../lib/locale.js";
+import { isShortcutSuppressed, nextCardIndex } from "../lib/keyboard.js";
 import { Btn } from "../components/Btn.jsx";
 import { GoalMeter } from "../components/GoalMeter.jsx";
 import { VideoCard } from "../components/VideoCard.jsx";
@@ -20,12 +23,65 @@ export function FeedView({
   quotaUsed,
   cacheStats,
 }) {
+  const cardRefs = useRef(new Map());
   const fresh = videos.filter((v) => v.status === "fresh");
   const done = videos.filter((v) => v.status !== "fresh");
   const totalSec = fresh.reduce((s, v) => s + v.duration, 0);
   const watchedSec = videos
     .filter((v) => v.status === "watched")
     .reduce((s, v) => s + v.duration, 0);
+  const cardOrder = useMemo(
+    () =>
+      activeGoals.flatMap((goal) =>
+        [...videos.filter((video) => video.goalId === goal.id)].sort(
+          (a, b) => (b.score ?? 0) - (a.score ?? 0)
+        )
+      ),
+    [activeGoals, videos]
+  );
+
+  const setCardRef = useCallback((id, element) => {
+    if (element) cardRefs.current.set(id, element);
+    else cardRefs.current.delete(id);
+  }, []);
+
+  useEffect(() => {
+    function currentCardIndex() {
+      return cardOrder.findIndex((video) => {
+        const card = cardRefs.current.get(video.id);
+        return card && (card === document.activeElement || card.contains(document.activeElement));
+      });
+    }
+
+    function handleKeyDown(event) {
+      if (isShortcutSuppressed(event)) return;
+
+      const key = event.key?.toLowerCase();
+      if (key === "j" || key === "k") {
+        if (!cardOrder.length) return;
+        event.preventDefault();
+        const index = nextCardIndex(currentCardIndex(), cardOrder.length, key === "j" ? 1 : -1);
+        cardRefs.current.get(cardOrder[index].id)?.focus();
+        return;
+      }
+
+      if (key !== "w" && key !== "s") return;
+
+      const video = cardOrder[currentCardIndex()];
+      if (!video || video.status !== "fresh" || DEMO_MODE) return;
+
+      event.preventDefault();
+      if (key === "w") {
+        if (playing === video.id) mark(video.id, "watched");
+        else setPlaying(video.id);
+      } else {
+        mark(video.id, "skipped");
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [cardOrder, mark, playing, setPlaying]);
 
   return (
     <div>
@@ -55,6 +111,13 @@ export function FeedView({
                 ` · cache ${cacheStats.videoHits || 0} video hits / ${cacheStats.scoreHits || 0} score hits`}
             </p>
           )}
+          <p
+            className="mt-2 text-[11px] text-ink-soft font-mono"
+            aria-label="Keyboard shortcuts: J and K move between cards. W watches the focused card. S skips it."
+          >
+            <kbd className="border border-mist bg-card px-1.5 py-0.5">J</kbd>/<kbd className="border border-mist bg-card px-1.5 py-0.5">K</kbd>{" "}
+            move between cards {DEMO_MODE ? "· W/S act on fresh cards in a live feed" : "· W watch · S skip"}
+          </p>
         </div>
         <div className="text-right">
           {!DEMO_MODE && (
@@ -64,7 +127,7 @@ export function FeedView({
           )}
           {!DEMO_MODE && !gate.allowed && (
             <p className="mt-1 font-mono text-[10px] text-honey-deep">
-              unlocks {gate.next?.toLocaleTimeString("en-CA", { hour: "2-digit", minute: "2-digit" })}
+              unlocks {gate.next && formatTime(gate.next, { hour: "2-digit", minute: "2-digit" })}
             </p>
           )}
         </div>
@@ -121,6 +184,7 @@ export function FeedView({
                       playing={playing}
                       setPlaying={setPlaying}
                       mark={mark}
+                      cardRef={(element) => setCardRef(v.id, element)}
                       lead={v.id === leadId}
                     />
                   </div>
